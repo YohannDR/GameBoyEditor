@@ -16,6 +16,7 @@ void GraphicsEditor::Update()
     if (m_SelectedGraphics != "<None>")
     {
         DrawCurrentTile();
+        ImGui::SameLine();
         DrawGraphics();
     }
 }
@@ -47,17 +48,13 @@ void GraphicsEditor::DrawGraphics()
 
     const size_t tileAmount = graphics.size() / 16;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(50, 50, 50, 255));
-    ImGui::BeginChild("graphicsWindow", ImVec2(0.f, 250.f), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoMove);
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar();
+    Ui::CreateSubWindow("graphicsWindow", ImGuiChildFlags_ResizeX);
 
     const ImVec2 basePos = ImGui::GetWindowPos();
 
+    constexpr float_t pixelSize = 4;
     for (size_t i = 0; i < tileAmount; i++)
     {
-        constexpr float_t pixelSize = 4;
         const ImVec2 tilePosition = ImVec2(
             basePos.x + static_cast<float_t>(i % 16) * 8 * pixelSize,
             basePos.y + static_cast<float_t>(i / 16) * 8 * pixelSize
@@ -66,20 +63,21 @@ void GraphicsEditor::DrawGraphics()
         Ui::DrawTile(tilePosition, graphics, i * 16, m_ColorPalette, pixelSize);
     }
 
+    const size_t index = Ui::DrawSelectSquare(basePos, ImVec2(16, 2), pixelSize * 8);
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
+        m_SelectedTile = index;
+
     ImGui::EndChild();
 }
 
 void GraphicsEditor::DrawCurrentTile()
 {
-    const std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
+    std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
     const size_t tileAmount = graphics.size() / 16;
     const size_t index = m_SelectedTile * 16;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(50, 50, 50, 255));
-    ImGui::BeginChild("tileWindow", ImVec2(0.f, 250.f), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX, ImGuiWindowFlags_NoMove);
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar();
+    Ui::CreateSubWindow("tileWindow", ImGuiChildFlags_ResizeX);
 
     ImGui::SliderInt("Current tile", reinterpret_cast<int32_t*>(&m_SelectedTile), 0, static_cast<int32_t>(tileAmount - 1));
     ImGui::SliderInt("Pixel size", &m_PixelSize, 25, 40);
@@ -87,6 +85,19 @@ void GraphicsEditor::DrawCurrentTile()
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
     Ui::DrawTile(position, graphics, index, m_ColorPalette, static_cast<float_t>(m_PixelSize));
+    const size_t pixelIndex = Ui::DrawSelectSquare(position, ImVec2(8.f, 8.f), static_cast<float_t>(m_PixelSize));
+
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && pixelIndex != std::numeric_limits<size_t>::max())
+    {
+        const Color color = m_ColorPalette[m_SelectedColor];
+        const size_t bitIndex = 7 - (pixelIndex % 8);
+
+        uint8_t& plane0 = graphics[index + pixelIndex / 8 * 2 + 0];
+        uint8_t& plane1 = graphics[index + pixelIndex / 8 * 2 + 1];
+
+        plane0 = (plane0 & ~(1 << bitIndex)) | (color & 1) << bitIndex;
+        plane1 = (plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex;
+    }
 
     ImGui::EndChild();
 }

@@ -1,5 +1,7 @@
 ﻿#include "ui.hpp"
 
+#include <iostream>
+
 #include "application.hpp"
 #include "graphics_editor.hpp"
 #include "imgui/imgui.h"
@@ -126,6 +128,15 @@ void Ui::DrawPalette(const ImVec2 position, Palette& palette, const float_t size
 
         ImGui::PopID();
     }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_A))
+        selectedColor = 0;
+    else if (ImGui::IsKeyPressed(ImGuiKey_Z))
+        selectedColor = 1;
+    else if (ImGui::IsKeyPressed(ImGuiKey_E))
+        selectedColor = 2;
+    else if (ImGui::IsKeyPressed(ImGuiKey_R))
+        selectedColor = 3;
 }
 
 void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette, const float_t size)
@@ -154,4 +165,35 @@ void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, c
             dl->AddRectFilled(pos, ImVec2(pos.x + size, pos.y + size), color);
         }
     }
+}
+
+size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const float_t squareSize)
+{
+    const ImVec2 mousePos = ImGui::GetMousePos();
+    const ImVec2 delta = ImVec2(mousePos.x - position.x, mousePos.y - position.y);
+    size_t index = std::numeric_limits<size_t>::max();
+
+    if (delta.x >= 0 && delta.x < size.x * squareSize && delta.y >= 0 && delta.y < size.y * squareSize)
+    {
+        const size_t x = static_cast<size_t>(delta.x) / static_cast<size_t>(squareSize);
+        const size_t y = static_cast<size_t>(delta.y) / static_cast<size_t>(squareSize);
+
+        index = y * static_cast<size_t>(size.x) + x;
+
+        const ImVec2 p1 = ImVec2(position.x + static_cast<float_t>(x) * squareSize, position.y + static_cast<float_t>(y) * squareSize);
+        const ImVec2 p2 = ImVec2(p1.x + squareSize, p1.y + squareSize);
+
+        ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+    }
+
+    return index;
+}
+
+void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags)
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(50, 50, 50, 255));
+    ImGui::BeginChild(name, ImVec2(0.f, 0.f), ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
 }

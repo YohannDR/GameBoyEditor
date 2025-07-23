@@ -13,6 +13,9 @@ public:
 
     static void DrawPalette(ImVec2 position, Palette& palette, float_t size, size_t& selectedColor);
     static void DrawTile(ImVec2 position, const std::vector<uint8_t>& graphics, size_t graphicsIndex, const Palette& palette, float_t size);
+    static size_t DrawSelectSquare(ImVec2 position, ImVec2 size, float_t squareSize);
+
+    static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags);
 
     template <typename T>
     static void ShowWindow();
