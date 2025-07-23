@@ -28,7 +28,11 @@
     <ClCompile Include="externals\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\GameBoyEditor.cpp" />
+    <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\graphics_editor.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\parser.cpp" />
+    <ClCompile Include="src\ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\glad\glad.h" />
@@ -45,12 +49,17 @@
     <ClInclude Include="externals\imgui\imstb_textedit.h" />
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="externals\KHR\khrplatform.h" />
+    <ClInclude Include="include\animation.hpp" />
+    <ClInclude Include="include\application.hpp" />
+    <ClInclude Include="include\color.hpp" />
+    <ClInclude Include="include\core.hpp" />
+    <ClInclude Include="include\graphics_editor.hpp" />
+    <ClInclude Include="include\parser.hpp" />
+    <ClInclude Include="include\ui.hpp" />
+    <ClInclude Include="include\ui_window.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="externals\libs\glfw3.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="include\" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
