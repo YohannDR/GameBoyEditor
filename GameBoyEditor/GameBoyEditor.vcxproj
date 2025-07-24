@@ -32,6 +32,7 @@
     <ClCompile Include="src\graphics_editor.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parser.cpp" />
+    <ClCompile Include="src\room_editor.cpp" />
     <ClCompile Include="src\ui.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +56,8 @@
     <ClInclude Include="include\core.hpp" />
     <ClInclude Include="include\graphics_editor.hpp" />
     <ClInclude Include="include\parser.hpp" />
+    <ClInclude Include="include\room.hpp" />
+    <ClInclude Include="include\room_editor.hpp" />
     <ClInclude Include="include\ui.hpp" />
     <ClInclude Include="include\ui_window.hpp" />
   </ItemGroup>

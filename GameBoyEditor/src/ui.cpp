@@ -4,6 +4,7 @@
 
 #include "application.hpp"
 #include "graphics_editor.hpp"
+#include "room_editor.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
@@ -11,6 +12,9 @@
 void Ui::Init()
 {
     m_Windows.push_back(new GraphicsEditor());
+    m_Windows.push_back(new RoomEditor());
+
+    ShowWindow<RoomEditor>();
 }
 
 void Ui::MainMenuBar()
@@ -165,6 +169,34 @@ void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, c
             dl->AddRectFilled(pos, ImVec2(pos.x + size, pos.y + size), color);
         }
     }
+}
+
+void Ui::DrawGraphics(const ImVec2 position, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
+{
+    const size_t tileAmount = graphics.size() / 16;
+
+    constexpr float_t pixelSize = 4;
+    for (size_t i = 0; i < tileAmount; i++)
+    {
+        const ImVec2 tilePosition = ImVec2(
+            position.x + static_cast<float_t>(i % 16) * 8 * pixelSize,
+            position.y + static_cast<float_t>(i / 16) * 8 * pixelSize  // NOLINT(bugprone-integer-division)
+        );
+
+        DrawTile(tilePosition, graphics, i * 16, palette, pixelSize);
+    }
+
+    const float_t tileMax = static_cast<float_t>(tileAmount);
+    const size_t index = DrawSelectSquare(position, ImVec2(tileMax >= 16 ? 16 : tileMax, 1 + tileMax / 16), pixelSize * 8);
+
+    const ImVec2 selectPos = ImVec2(
+        position.x + static_cast<float_t>(*selectedTile % 16) * pixelSize * 8,
+        position.y + static_cast<float_t>(*selectedTile / 16) * pixelSize * 8  // NOLINT(bugprone-integer-division)
+    );
+    ImGui::GetWindowDrawList()->AddRect(selectPos, ImVec2(selectPos.x + pixelSize * 8, selectPos.y + pixelSize * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
+        *selectedTile = index;
 }
 
 size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const float_t squareSize)

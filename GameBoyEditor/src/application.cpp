@@ -119,10 +119,41 @@ void Application::PreLoop()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    static bool_t dockspaceOpen = true;
+	static bool_t optFullscreenPersistant = true;
+
+    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
+    if (optFullscreenPersistant)
+        dockspaceFlags |= ImGuiDockNodeFlags_PassthruCentralNode;
+	
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    if (optFullscreenPersistant)
+    {
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
+
+        windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+    }
+
+    // Begin docking layout
+    ImGui::Begin("DockSpace Demo", &dockspaceOpen, windowFlags);
+	
+    if (optFullscreenPersistant)
+        ImGui::PopStyleVar(3);
+
+    const ImGuiID dockspaceId = ImGui::GetID("DockSpace");
+    ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockspaceFlags);
 }
 
 void Application::PostLoop()
 {
+	ImGui::End();
     ImGui::Render();
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

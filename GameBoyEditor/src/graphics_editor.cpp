@@ -9,8 +9,6 @@
 
 void GraphicsEditor::Update()
 {
-    ImGui::ShowDemoWindow();
-
     DrawGraphicsSelector();
     DrawPalette();
     if (m_SelectedGraphics != "<None>")
@@ -44,29 +42,30 @@ void GraphicsEditor::DrawPalette()
 
 void GraphicsEditor::DrawGraphics()
 {
-    const std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
-
-    const size_t tileAmount = graphics.size() / 16;
+    std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
 
     Ui::CreateSubWindow("graphicsWindow", ImGuiChildFlags_ResizeX);
 
-    const ImVec2 basePos = ImGui::GetWindowPos();
-
-    constexpr float_t pixelSize = 4;
-    for (size_t i = 0; i < tileAmount; i++)
+    size_t tileAmount = graphics.size() / 16;
+    if (ImGui::Button("Add tile"))
     {
-        const ImVec2 tilePosition = ImVec2(
-            basePos.x + static_cast<float_t>(i % 16) * 8 * pixelSize,
-            basePos.y + static_cast<float_t>(i / 16) * 8 * pixelSize
-        );
-
-        Ui::DrawTile(tilePosition, graphics, i * 16, m_ColorPalette, pixelSize);
+        for (size_t i = 0; i < 16; i++)
+            graphics.push_back(0);
     }
 
-    const size_t index = Ui::DrawSelectSquare(basePos, ImVec2(16, 2), pixelSize * 8);
+    ImGui::BeginDisabled(tileAmount == 1);
+    if (ImGui::Button("Delete tile"))
+    {
+        graphics.erase(graphics.begin() + static_cast<int64_t>(m_SelectedTile) * 16, graphics.begin() + static_cast<int64_t>(m_SelectedTile + 1) * 16);
 
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
-        m_SelectedTile = index;
+        if (m_SelectedTile == tileAmount - 1)
+            m_SelectedTile--;
+    }
+    ImGui::EndDisabled();
+
+    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
+
+    Ui::DrawGraphics(position, graphics, m_ColorPalette, &m_SelectedTile);
 
     ImGui::EndChild();
 }
@@ -90,13 +89,13 @@ void GraphicsEditor::DrawCurrentTile()
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && pixelIndex != std::numeric_limits<size_t>::max())
     {
         const Color color = m_ColorPalette[m_SelectedColor];
-        const size_t bitIndex = 7 - (pixelIndex % 8);
+        const size_t bitIndex = 7 - pixelIndex % 8;
 
         uint8_t& plane0 = graphics[index + pixelIndex / 8 * 2 + 0];
         uint8_t& plane1 = graphics[index + pixelIndex / 8 * 2 + 1];
 
-        plane0 = (plane0 & ~(1 << bitIndex)) | (color & 1) << bitIndex;
-        plane1 = (plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex;
+        plane0 = static_cast<uint8_t>((plane0 & ~(1 << bitIndex)) | (color >> 0 & 1) << bitIndex);
+        plane1 = static_cast<uint8_t>((plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex);
     }
 
     ImGui::EndChild();

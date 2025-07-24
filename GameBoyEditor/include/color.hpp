@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <string>
 
 #include "core.hpp"
 #include "imgui/imgui.h"
@@ -13,7 +14,7 @@ enum Color : uint8_t
     Black
 };
 
-constexpr inline uint32_t GetRgbColor(const Color c)
+constexpr uint32_t GetRgbColor(const Color c)
 {
     switch (c)
     {
@@ -24,6 +25,20 @@ constexpr inline uint32_t GetRgbColor(const Color c)
     }
 
     return 0x000000FF;
+}
+
+inline Color GetColorFromString(const std::string& color)
+{
+    if (color == "COLOR_WHITE")
+        return White;
+    if (color == "COLOR_LIGHT_GRAY")
+        return LightGrey;
+    if (color == "COLOR_DARK_GRAY")
+        return DarkGrey;
+    if (color == "COLOR_BLACK")
+        return Black;
+
+    return White;
 }
 
 using Palette = std::array<Color, 4>;
