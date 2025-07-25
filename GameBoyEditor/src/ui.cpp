@@ -171,6 +171,14 @@ void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, c
     }
 }
 
+void Ui::DrawCross(const ImVec2 position, const float_t size)
+{
+    ImDrawList* const dl = ImGui::GetWindowDrawList();
+
+    dl->AddLine(position, ImVec2(position.x + size * 8, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+    dl->AddLine(ImVec2(position.x + size * 8, position.y), ImVec2(position.x, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+}
+
 void Ui::DrawGraphics(const ImVec2 position, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
 {
     const size_t tileAmount = graphics.size() / 16;

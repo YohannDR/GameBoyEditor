@@ -41,7 +41,7 @@ void RoomEditor::DrawTileset()
     ImGui::EndChild();
 }
 
-void RoomEditor::DrawRoom()
+void RoomEditor::DrawRoom() const
 {
     const std::vector<uint8_t>& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
@@ -61,7 +61,11 @@ void RoomEditor::DrawRoom()
                 position.y + static_cast<float_t>(i) * 8 * pixelSize
             );
 
-            Ui::DrawTile(tilePosition, graphics, static_cast<size_t>(tilemap.data[i * tilemap.width + j] * 16), palette, pixelSize);
+            const uint8_t tileId = tilemap.data[i * tilemap.width + j];
+            if (tileId < graphics.size() / 16)
+                Ui::DrawTile(tilePosition, graphics, static_cast<size_t>(tileId * 16), palette, pixelSize);
+            else
+                Ui::DrawCross(tilePosition, pixelSize);
         }
     }
 

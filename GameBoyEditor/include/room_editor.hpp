@@ -12,7 +12,7 @@ public:
 private:
     void DrawRoomId();
     void DrawTileset();
-    void DrawRoom();
+    void DrawRoom() const;
 
     size_t m_RoomId = 0;
     size_t m_SelectedTile = 0;
