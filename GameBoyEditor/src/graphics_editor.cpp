@@ -37,7 +37,7 @@ void GraphicsEditor::DrawGraphicsSelector()
 
 void GraphicsEditor::DrawPalette()
 {
-    Ui::DrawPalette(m_Position, m_ColorPalette, 30.f, m_SelectedColor);
+    Ui::DrawPalette(m_ColorPalette, 30.f, &m_SelectedColor);
 }
 
 void GraphicsEditor::DrawGraphics()

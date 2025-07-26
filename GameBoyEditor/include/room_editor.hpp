@@ -12,6 +12,7 @@ public:
     void OnProjectLoaded() override;
 
 private:
+    void DrawOptions();
     void DrawRoomId();
     void DrawResize();
     void DrawTileset();

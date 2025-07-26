@@ -1,5 +1,7 @@
 ﻿#include "room_editor.hpp"
 
+#include <ranges>
+
 #include "application.hpp"
 #include "parser.hpp"
 #include "ui.hpp"
@@ -9,16 +11,26 @@ void RoomEditor::Update()
     if (!Application::IsProjectLoaded())
         return;
 
-    DrawRoomId();
-    DrawResize();
+    const float_t y = ImGui::GetCursorPosY();
+    DrawOptions();
     DrawTileset();
     ImGui::SameLine();
+    ImGui::SetCursorPosY(y);
     DrawRoom();
 }
 
 void RoomEditor::OnProjectLoaded()
 {
     LoadRoom();
+}
+
+void RoomEditor::DrawOptions()
+{
+    Ui::CreateSubWindow("roomOptions", ImGuiChildFlags_ResizeY, ImVec2(4 * 8 * 16, 0));
+    DrawRoomId();
+    DrawResize();
+    Ui::DrawPalette(Parser::rooms[m_RoomId].colorPalette, 30.f, nullptr);
+    ImGui::EndChild();
 }
 
 void RoomEditor::DrawRoomId()
@@ -42,12 +54,15 @@ void RoomEditor::DrawRoomId()
 
 void RoomEditor::DrawResize()
 {
+    constexpr uint8_t maxWidth = 20 * 4;
+    constexpr uint8_t maxHeight = 18 * 4;
+
     constexpr float_t size = 50;
     ImGui::SetNextItemWidth(size / 2);
-    ImGui::InputScalar("Width", ImGuiDataType_U8, &m_Width);
+    ImGui::DragScalar("Width", ImGuiDataType_U8, &m_Width, 1, nullptr, &maxWidth);
     ImGui::SameLine();
     ImGui::SetNextItemWidth(size / 2);
-    ImGui::InputScalar("Height", ImGuiDataType_U8, &m_Height);
+    ImGui::DragScalar("Height", ImGuiDataType_U8, &m_Height, 1, nullptr, &maxHeight);
 
     if (ImGui::Button("Resize"))
         ResizeRoom();
@@ -55,11 +70,23 @@ void RoomEditor::DrawResize()
 
 void RoomEditor::DrawTileset()
 {
+    Ui::CreateSubWindow("roomTileset", ImGuiChildFlags_ResizeY, ImVec2(4 * 8 * 16, 0));
+
+    if (ImGui::BeginCombo("Graphics", Parser::rooms[m_RoomId].graphics.c_str()))
+    {
+        for (const std::string& s : Parser::graphics | std::ranges::views::keys)
+        {
+            if (ImGui::MenuItem(s.c_str()))
+                Parser::rooms[m_RoomId].graphics = s;
+        }
+        
+        ImGui::EndCombo();
+    }
+
     const std::vector<uint8_t>& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    Ui::CreateSubWindow("roomTileset", ImGuiChildFlags_ResizeX);
-
-    Ui::DrawGraphics(ImGui::GetWindowPos(), graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+    Ui::DrawGraphics(position, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
 
@@ -74,7 +101,9 @@ void RoomEditor::DrawRoom() const
 
     Ui::CreateSubWindow("room", ImGuiChildFlags_ResizeX);
 
-    const ImVec2 position = ImGui::GetWindowPos();
+    ImGui::Text("Tilemap : %s", Parser::rooms[m_RoomId].tilemap.c_str());
+
+    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x - ImGui::GetScrollX(), ImGui::GetWindowPos().y + ImGui::GetCursorPosY() - ImGui::GetScrollY());
 
     constexpr float_t pixelSize = 4;
     for (size_t i = 0; i < height; i++)
@@ -93,6 +122,8 @@ void RoomEditor::DrawRoom() const
                 Ui::DrawCross(tilePosition, pixelSize);
         }
     }
+
+    ImGui::Dummy(ImVec2(width * pixelSize * 8, height * pixelSize * 8));
 
     const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), pixelSize * 8);
 

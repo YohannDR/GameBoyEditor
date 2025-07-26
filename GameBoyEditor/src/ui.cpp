@@ -103,7 +103,7 @@ void Ui::OnProjectLoaded()
         w->OnProjectLoaded();
 }
 
-void Ui::DrawPalette(const ImVec2 position, Palette& palette, const float_t size, size_t& selectedColor)
+void Ui::DrawPalette(Palette& palette, const float_t size, size_t* selectedColor)
 {
     const float_t spacing = ImGui::GetStyle().ItemSpacing.y;
     ImDrawList* const dl = ImGui::GetWindowDrawList();
@@ -133,18 +133,21 @@ void Ui::DrawPalette(const ImVec2 position, Palette& palette, const float_t size
 
         const uint32_t rgb = GetRgbColor(palette[i]);
 
-        const ImVec2 p1 = ImVec2(position.x + x, position.y + y + 1);
+        const ImVec2 p1 = ImVec2(ImGui::GetWindowPos().x + x, ImGui::GetWindowPos().y + y + 1);
         const ImVec2 p2 = ImVec2(p1.x + size, p1.y + size + spacing - 1);
 
         dl->AddRectFilled(p1, p2, rgb);
         dl->AddRect(ImVec2(p1.x - 1.f, p1.y - 1.f), ImVec2(p2.x + 1.f, p2.y + 1.f),
-            selectedColor == i
+            selectedColor && *selectedColor == i
             ? IM_COL32(0x00, 0xFF, 0x00, 0xFF)
             : IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 
         ImGui::SetCursorPos(buttonPos);
         if (ImGui::InvisibleButton("btn", ImVec2(p2.x - p1.x, p2.y - p1.y)))
-            selectedColor = i;
+        {
+            if (selectedColor)
+                *selectedColor = i;
+        }
 
         if (i != 3)
             ImGui::SetCursorPos(ImVec2(buttonPos.x + size + 10, buttonPos.y));
@@ -152,14 +155,17 @@ void Ui::DrawPalette(const ImVec2 position, Palette& palette, const float_t size
         ImGui::PopID();
     }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_A))
-        selectedColor = 0;
-    else if (ImGui::IsKeyPressed(ImGuiKey_Z))
-        selectedColor = 1;
-    else if (ImGui::IsKeyPressed(ImGuiKey_E))
-        selectedColor = 2;
-    else if (ImGui::IsKeyPressed(ImGuiKey_R))
-        selectedColor = 3;
+    if (selectedColor)
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_A))
+            *selectedColor = 0;
+        else if (ImGui::IsKeyPressed(ImGuiKey_Z))
+            *selectedColor = 1;
+        else if (ImGui::IsKeyPressed(ImGuiKey_E))
+            *selectedColor = 2;
+        else if (ImGui::IsKeyPressed(ImGuiKey_R))
+            *selectedColor = 3;
+    }
 }
 
 void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette, const float_t size)
@@ -248,11 +254,11 @@ size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const floa
     return index;
 }
 
-void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags)
+void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags, const ImVec2 size)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(50, 50, 50, 255));
-    ImGui::BeginChild(name, ImVec2(0.f, 0.f), ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
+    ImGui::BeginChild(name, size, ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 }

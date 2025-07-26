@@ -12,13 +12,13 @@ public:
     static void DrawWindows();
     static void OnProjectLoaded();
 
-    static void DrawPalette(ImVec2 position, Palette& palette, float_t size, size_t& selectedColor);
+    static void DrawPalette(Palette& palette, float_t size, size_t* selectedColor);
     static void DrawTile(ImVec2 position, const std::vector<uint8_t>& graphics, size_t graphicsIndex, const Palette& palette, float_t size);
     static void DrawCross(ImVec2 position, float_t size);
     static void DrawGraphics(ImVec2 position, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* selectedTile);
     static size_t DrawSelectSquare(ImVec2 position, ImVec2 size, float_t squareSize);
 
-    static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags);
+    static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags, ImVec2 size = ImVec2(0, 0));
 
     template <typename T>
     static void ShowWindow();
