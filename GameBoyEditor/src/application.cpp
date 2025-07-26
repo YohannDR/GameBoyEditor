@@ -91,6 +91,7 @@ bool_t Application::TryParseProject()
         return false;
 
     m_ProjectLoaded = true;
+    Ui::OnProjectLoaded();
     return true;
 }
 

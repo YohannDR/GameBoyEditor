@@ -49,6 +49,19 @@ void Ui::MainMenuBar()
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Add"))
+    {
+        if (ImGui::MenuItem("Graphics"))
+        {
+            
+        }
+
+        if (ImGui::MenuItem("Room"))
+        {
+            
+        }
+    }
+
     ImGui::EndMainMenuBar();
 
     if (openPopup)
@@ -82,6 +95,12 @@ void Ui::DrawWindows()
 
         ImGui::End();
     }
+}
+
+void Ui::OnProjectLoaded()
+{
+    for (UiWindow* const w : m_Windows)
+        w->OnProjectLoaded();
 }
 
 void Ui::DrawPalette(const ImVec2 position, Palette& palette, const float_t size, size_t& selectedColor)

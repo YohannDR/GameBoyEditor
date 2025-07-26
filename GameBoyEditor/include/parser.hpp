@@ -8,16 +8,7 @@
 #include "core.hpp"
 #include "room.hpp"
 
-struct Tilemap
-{
-    uint8_t width;
-    uint8_t height;
-    std::vector<uint8_t> data;
-
-    constexpr Tilemap() = default;
-    explicit constexpr Tilemap(const int32_t w, const int32_t h, const std::vector<uint8_t>& d)
-        : width(static_cast<uint8_t>(w)), height(static_cast<uint8_t>(h)), data(d) {}
-};
+using Tilemap = std::vector<std::vector<uint8_t>>;
 
 class Parser
 {

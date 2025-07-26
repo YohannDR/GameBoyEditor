@@ -10,6 +10,7 @@ public:
     static void Init();
     static void MainMenuBar();
     static void DrawWindows();
+    static void OnProjectLoaded();
 
     static void DrawPalette(ImVec2 position, Palette& palette, float_t size, size_t& selectedColor);
     static void DrawTile(ImVec2 position, const std::vector<uint8_t>& graphics, size_t graphicsIndex, const Palette& palette, float_t size);

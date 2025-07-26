@@ -101,7 +101,14 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
     }
     else if (type == 1)
     {
-        tilemaps[symbolName] = Tilemap{ width, height, data };
+        tilemaps[symbolName].resize(height);
+
+        const size_t h = static_cast<size_t>(height);
+        for (size_t i = 0; i < h; i++)
+        {
+            const Tilemap::difference_type index = width * i;
+            tilemaps[symbolName][i] = std::vector(data.begin() + index, data.begin() + index + width);
+        }
     }
     else if (type == 1)
     {

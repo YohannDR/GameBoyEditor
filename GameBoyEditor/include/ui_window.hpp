@@ -14,6 +14,8 @@ public:
     DEFAULT_COPY_MOVE_OPERATIONS(UiWindow)
 
     virtual void Update() = 0;
+    virtual void OnProjectLoaded() {}
+
     void FetchInfo()
     {
         m_Position = ImGui::GetWindowPos();
