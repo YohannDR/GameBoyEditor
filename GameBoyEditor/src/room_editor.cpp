@@ -1,5 +1,6 @@
 ﻿#include "room_editor.hpp"
 
+#include <iostream>
 #include <ranges>
 
 #include "application.hpp"
@@ -17,6 +18,14 @@ void RoomEditor::Update()
     ImGui::SameLine();
     ImGui::SetCursorPosY(y);
     DrawRoom();
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+    {
+        if (m_EditingMode == EditingMode::Tile)
+            m_EditingMode = EditingMode::Object;
+        else
+            m_EditingMode = EditingMode::Tile;
+    }
 }
 
 void RoomEditor::OnProjectLoaded()
@@ -28,8 +37,11 @@ void RoomEditor::DrawOptions()
 {
     Ui::CreateSubWindow("roomOptions", ImGuiChildFlags_ResizeY, ImVec2(4 * 8 * 16, 0));
     DrawRoomId();
+    DrawEditingMode();
+    
     DrawResize();
     Ui::DrawPalette(Parser::rooms[m_RoomId].colorPalette, 30.f, nullptr);
+
     ImGui::EndChild();
 }
 
@@ -50,6 +62,13 @@ void RoomEditor::DrawRoomId()
 
         ImGui::EndCombo();
     }
+}
+
+void RoomEditor::DrawEditingMode()
+{
+    ImGui::RadioButton("Tile mode", reinterpret_cast<int*>(&m_EditingMode), 0);
+    ImGui::SameLine();
+    ImGui::RadioButton("Object mode", reinterpret_cast<int*>(&m_EditingMode), 1);
 }
 
 void RoomEditor::DrawResize()
@@ -90,7 +109,7 @@ void RoomEditor::DrawTileset()
     ImGui::EndChild();
 }
 
-void RoomEditor::DrawRoom() const
+void RoomEditor::DrawRoom()
 {
     const std::vector<uint8_t>& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
@@ -125,32 +144,56 @@ void RoomEditor::DrawRoom() const
     ImGui::Dummy(ImVec2(width * PixelSize * 8, height * PixelSize * 8));
 
     const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), PixelSize * 8);
+    const bool_t inBounds = index != std::numeric_limits<size_t>::max();
 
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max())
-    {
-        const size_t x = index % width;
-        const size_t y = index / width;
+    const size_t x = index % width;
+    const size_t y = index / width;
 
+    if (m_EditingMode == EditingMode::Tile && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds)
         tilemap[y][x] = static_cast<uint8_t>(m_SelectedTile);
-    }
 
-    DrawSprites(position);
+    DrawSprites(position, inBounds, x, y);
 
     ImGui::EndChild();
 }
 
-void RoomEditor::DrawSprites(const ImVec2 position) const
+void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY)
 {
-    const std::vector<SpriteData>& spriteData = Parser::sprites[Parser::rooms[m_RoomId].spriteData];
+    std::vector<SpriteData>& spriteData = Parser::sprites[Parser::rooms[m_RoomId].spriteData];
 
     ImDrawList* const dl = ImGui::GetWindowDrawList();
-    
-    for (const SpriteData& sprite : spriteData)
+
+    for (SpriteData& sprite : spriteData)
     {
-        const ImVec2 p1 = ImVec2(position.x + sprite.x * PixelSize * 8, position.y + sprite.y * PixelSize * 8);
+        if (m_EditingMode == EditingMode::Object)
+        {
+            if (m_SelectedSprite == &sprite)
+            {
+                if (inBounds)
+                {
+                    m_SelectedSprite->x = static_cast<uint8_t>(cursorX);
+                    m_SelectedSprite->y = static_cast<uint8_t>(cursorY + 1);
+                }
+
+                if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                    m_SelectedSprite = nullptr;
+            }
+
+            if (m_SelectedSprite == nullptr && inBounds && cursorX == sprite.x && cursorY + 1 == sprite.y)
+            {
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                    m_SelectedSprite = &sprite;
+            }
+        }
+        else
+        {
+            m_SelectedSprite = nullptr;
+        }
+
+        const ImVec2 p1 = ImVec2(position.x + sprite.x * PixelSize * 8, position.y + (sprite.y - 1) * PixelSize * 8);
         const ImVec2 p2 = ImVec2(p1.x + PixelSize * 8, p1.y + PixelSize * 8);
 
-        dl->AddRect(p1, p2, IM_COL32(0x00, 0x00, 0xFF, 0xFF), 0, 0, 4);
+        dl->AddRect(p1, p2, IM_COL32(0x00, 0xFF, 0x00, 0xFF), 0, 0, 4);
     }
 }
 
