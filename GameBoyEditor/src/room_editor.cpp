@@ -105,27 +105,26 @@ void RoomEditor::DrawRoom() const
 
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x - ImGui::GetScrollX(), ImGui::GetWindowPos().y + ImGui::GetCursorPosY() - ImGui::GetScrollY());
 
-    constexpr float_t pixelSize = 4;
     for (size_t i = 0; i < height; i++)
     {
         for (size_t j = 0; j < width; j++)
         {
             const ImVec2 tilePosition = ImVec2(
-                position.x + static_cast<float_t>(j) * 8 * pixelSize,
-                position.y + static_cast<float_t>(i) * 8 * pixelSize
+                position.x + static_cast<float_t>(j) * 8 * PixelSize,
+                position.y + static_cast<float_t>(i) * 8 * PixelSize
             );
 
             const uint8_t tileId = tilemap[i][j];
             if (tileId < graphics.size() / 16)
-                Ui::DrawTile(tilePosition, graphics, static_cast<size_t>(tileId * 16), palette, pixelSize);
+                Ui::DrawTile(tilePosition, graphics, static_cast<size_t>(tileId * 16), palette, PixelSize);
             else
-                Ui::DrawCross(tilePosition, pixelSize);
+                Ui::DrawCross(tilePosition, PixelSize);
         }
     }
 
-    ImGui::Dummy(ImVec2(width * pixelSize * 8, height * pixelSize * 8));
+    ImGui::Dummy(ImVec2(width * PixelSize * 8, height * PixelSize * 8));
 
-    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), pixelSize * 8);
+    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), PixelSize * 8);
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max())
     {
@@ -135,7 +134,24 @@ void RoomEditor::DrawRoom() const
         tilemap[y][x] = static_cast<uint8_t>(m_SelectedTile);
     }
 
+    DrawSprites(position);
+
     ImGui::EndChild();
+}
+
+void RoomEditor::DrawSprites(const ImVec2 position) const
+{
+    const std::vector<SpriteData>& spriteData = Parser::sprites[Parser::rooms[m_RoomId].spriteData];
+
+    ImDrawList* const dl = ImGui::GetWindowDrawList();
+    
+    for (const SpriteData& sprite : spriteData)
+    {
+        const ImVec2 p1 = ImVec2(position.x + sprite.x * PixelSize * 8, position.y + sprite.y * PixelSize * 8);
+        const ImVec2 p2 = ImVec2(p1.x + PixelSize * 8, p1.y + PixelSize * 8);
+
+        dl->AddRect(p1, p2, IM_COL32(0x00, 0x00, 0xFF, 0xFF), 0, 0, 4);
+    }
 }
 
 void RoomEditor::LoadRoom()

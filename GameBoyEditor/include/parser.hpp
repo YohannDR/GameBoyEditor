@@ -10,6 +10,15 @@
 
 using Tilemap = std::vector<std::vector<uint8_t>>;
 
+enum class SymbolType : uint8_t
+{
+    Graphics,
+    Tilemap,
+    Clipdata,
+    SpriteData,
+    RoomData
+};
+
 class Parser
 {
     STATIC_CLASS(Parser)
@@ -17,8 +26,9 @@ class Parser
 public:
     static bool_t ParseProject();
 
-    static bool_t ParseGraphicsArray(std::ifstream& file, std::string& line);
-    static bool_t ParseRoomInfo(std::ifstream& file, std::string& line);
+    static bool_t ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
 
     static Palette ParsePalette(const std::string& pal);
 
@@ -26,6 +36,9 @@ public:
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
     static inline std::unordered_map<std::string, std::vector<uint8_t>> clipdata;
     static inline std::vector<Room> rooms;
+    static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
+
+    static inline std::unordered_map<std::string, std::vector<std::pair<SymbolType, std::string>>> fileAssociations;
 
 private:
     static bool_t ParseFileContents(const std::filesystem::path& filePath);

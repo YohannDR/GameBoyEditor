@@ -17,6 +17,7 @@ private:
     void DrawResize();
     void DrawTileset();
     void DrawRoom() const;
+    void DrawSprites(ImVec2 position) const;
 
     void LoadRoom();
     void ResizeRoom() const;
@@ -26,4 +27,6 @@ private:
 
     size_t m_RoomId = 0;
     size_t m_SelectedTile = 0;
+
+    static constexpr float_t PixelSize = 4;
 };

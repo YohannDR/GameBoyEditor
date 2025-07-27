@@ -28,9 +28,9 @@ bool_t Parser::ParseProject()
     return true;
 }
 
-bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
+bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
 {
-    uint8_t type;
+    SymbolType type;
     int32_t width = 0;
     int32_t height = 0;
 
@@ -41,7 +41,7 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
     {
         std::getline(file, line);
         std::getline(file, line);
-        type = 0;
+        type = SymbolType::Graphics;
     }
     else if (symbolName.contains("Tilemap"))
     {
@@ -49,14 +49,14 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
         (void)sscanf_s(line.c_str(), "%d, %d", &width, &height);
         
         std::getline(file, line);
-        type = 1;
+        type = SymbolType::Tilemap;
     }
     else if (symbolName.contains("Clipdata"))
     {
         std::getline(file, line);
         (void)sscanf_s(line.c_str(), "%d, %d", &width, &height);
         std::getline(file, line);
-        type = 2;
+        type = SymbolType::Clipdata;
     }
     else
     {
@@ -71,7 +71,7 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
         if (line[0] == '}')
             break;
 
-        if (type == 0)
+        if (type == SymbolType::Graphics)
         {
             int32_t buffer[16];
             (void)sscanf_s(line.c_str(), "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x",
@@ -82,7 +82,7 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
             );
             data.append_range(buffer);
         }
-        else if (type == 1 || type == 2)
+        else if (type == SymbolType::Tilemap || type == SymbolType::Clipdata)
         {
             int32_t buffer[20];
             (void)sscanf_s(line.c_str(), "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x",
@@ -95,11 +95,11 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
         }
     }
 
-    if (type == 0)
+    if (type == SymbolType::Graphics)
     {
         graphics[symbolName] = data;
     }
-    else if (type == 1)
+    else if (type == SymbolType::Tilemap)
     {
         tilemaps[symbolName].resize(height);
 
@@ -110,15 +110,17 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, std::string& line)
             tilemaps[symbolName][i] = std::vector(data.begin() + index, data.begin() + index + width);
         }
     }
-    else if (type == 1)
+    else if (type == SymbolType::Clipdata)
     {
         // m_Clipdata[symbolName] = { width, height, data };
     }
 
+    fileAssociations[filePath.string()].emplace_back(type, symbolName);
+
     return true;
 }
 
-bool_t Parser::ParseRoomInfo(std::ifstream& file, std::string& line)
+bool_t Parser::ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
 {
     while (true)
     {
@@ -138,10 +140,51 @@ bool_t Parser::ParseRoomInfo(std::ifstream& file, std::string& line)
         const std::string palette = line.substr(sizeof("        .bgPalette = ") - 1, line.find(')') - sizeof("        .bgPalette = ") + 1);
         std::getline(file, line);
         const std::string spriteData = line.substr(sizeof("        .spriteData = ") - 1, line.find(',') - sizeof("        .spriteData = ") + 1);
+
+        // Skip the line with },
         std::getline(file, line);
 
         rooms.emplace_back(gfx, tilemap, clip, ParsePalette(palette), spriteData);
     }
+
+    fileAssociations[filePath.string()].emplace_back(SymbolType::RoomData, "sRooms");
+
+    return true;
+}
+
+bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    const size_t idx = line.find('[');
+    const std::string symbolName = line.substr(sizeof("const struct RoomSprite"), idx - sizeof("const struct RoomSprite"));
+
+    while (true)
+    {
+        std::getline(file, line);
+
+        if (line.contains("ROOM_SPRITE_TERMINATOR"))
+            break;
+
+        if (line.contains('['))
+            continue;
+
+        int32_t x;
+        int32_t y;
+        int32_t part;
+
+        (void)sscanf_s(line.c_str(), "        .x = %d,", &x);
+        std::getline(file, line);
+        (void)sscanf_s(line.c_str(), "        .y = %d,", &y);
+        std::getline(file, line);
+        const std::string type = line.substr(sizeof("        .id = ") - 1, line.find(',') - sizeof("        .id = ") + 1);
+        std::getline(file, line);
+        (void)sscanf_s(line.c_str(), "        .part = %d,", &part);
+        // Skip the line with },
+        std::getline(file, line);
+
+        sprites[symbolName].emplace_back(x, y, type, part);
+    }
+
+    fileAssociations[filePath.string()].emplace_back(SymbolType::SpriteData, symbolName);
 
     return true;
 }
@@ -186,11 +229,15 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
 
         if (line.contains("const u8"))
         {
-            ParseGraphicsArray(file, line);
+            ParseGraphicsArray(file, filePath, line);
         }
         else if (line.contains("struct RoomInfo"))
         {
-            ParseRoomInfo(file, line);
+            ParseRoomInfo(file, filePath, line);
+        }
+        else if (line.contains("const struct RoomSprite"))
+        {
+            ParseSpriteInfo(file, filePath, line);
         }
     }
 
