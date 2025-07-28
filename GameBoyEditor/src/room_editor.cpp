@@ -10,7 +10,6 @@
 
 void RoomEditor::Update()
 {
-    ImGui::ShowDemoWindow();
     if (!Application::IsProjectLoaded())
         return;
 
@@ -137,7 +136,7 @@ void RoomEditor::DrawRoom()
 
             const uint8_t tileId = tilemap[i][j];
             if (tileId < graphics.size() / 16)
-                Ui::DrawTile(tilePosition, graphics, static_cast<size_t>(tileId * 16), palette, PixelSize);
+                Ui::DrawTile(tilePosition, graphics, tileId, palette, PixelSize);
             else
                 Ui::DrawCross(tilePosition, PixelSize);
         }

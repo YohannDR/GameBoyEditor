@@ -6,7 +6,7 @@
 class RoomEditor : public UiWindow
 {
 public:
-    explicit RoomEditor() { name = "Room editor"; }
+    explicit RoomEditor() { name = "Room editor"; canBeClosed = false; }
 
     void Update() override;
     void OnProjectLoaded() override;

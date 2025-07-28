@@ -9,9 +9,9 @@
 bool_t Parser::ParseProject()
 {
     const std::filesystem::path path = Application::projectPath;
-    const std::filesystem::path dataPath = path / "src/data";
+    const std::filesystem::path srcPath = path / "src";
 
-    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(dataPath))
+    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(srcPath))
     {
         // Skip folders
         if (dirEntry.is_directory())
@@ -192,6 +192,78 @@ bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path&
     return true;
 }
 
+bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& path, std::string& line)
+{
+    Animation animation;
+    int32_t partCount;
+    size_t animationFrame = 0;
+
+    // Parse frames
+    while (true)
+    {
+        if (line.contains("struct AnimData"))
+            break;
+
+        (void)sscanf_s(&line.c_str()[line.find('[') + 1], "OAM_DATA_SIZE(%d)] = {", &partCount);
+
+        animation.emplace_back();
+
+        // Consume the count in the array itself
+        std::getline(file, line);
+
+        for (int32_t i = 0; i < partCount; i++)
+        {
+            int32_t y;
+            int32_t x;
+            int32_t tileId;
+            int32_t props;
+
+            std::getline(file, line);
+            (void)sscanf_s(line.c_str(), "    OAM_POS(%d), OAM_POS(%d), %d, %d,", &y, &x, &tileId, &props);
+
+            animation[animationFrame].oam.emplace_back(y, x, tileId, props);
+        }
+
+        animationFrame++;
+        // Consume };
+        std::getline(file, line);
+        // And the empty line
+        std::getline(file, line);
+        std::getline(file, line);
+    }
+
+    animationFrame = 0;
+
+    const size_t idx = line.find('[');
+    const std::string symbolName = line.substr(sizeof("static const struct AnimData"), idx - sizeof("static const struct AnimData"));
+
+    // Parse animation data
+    while (true)
+    {
+        // Get [X] = {
+        std::getline(file, line);
+        if (line.contains("SPRITE_ANIM_TERMINATOR"))
+            break;
+
+        // Consume oamPointer = 
+        std::getline(file, line);
+
+        int32_t duration;
+        std::getline(file, line);
+        (void)sscanf_s(line.c_str(),"        .duration = %d", &duration);
+
+        animation[animationFrame].duration = static_cast<uint8_t>(duration);
+        // Consume },
+        std::getline(file, line);
+
+        animationFrame++;
+    }
+
+    animations[symbolName] = animation;
+
+    return true;
+}
+
 void Parser::ParseEnums()
 {
     // Look for specific enums in specific files
@@ -249,10 +321,7 @@ void Parser::ParseEnums()
             continue;
 
         if (line.contains("CLIPDATA_END"))
-        {
-            parsing = false;
             break;
-        }
 
         if (line.contains("CLIPDATA"))
         {
@@ -302,17 +371,21 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
     {
         std::getline(file, line);
 
-        if (line.contains("const u8"))
+        if (line.starts_with("const u8 "))
         {
             ParseGraphicsArray(file, filePath, line);
         }
-        else if (line.contains("struct RoomInfo"))
+        else if (line.starts_with("const struct RoomInfo"))
         {
             ParseRoomInfo(file, filePath, line);
         }
-        else if (line.contains("const struct RoomSprite"))
+        else if (line.starts_with("const struct RoomSprite"))
         {
             ParseSpriteInfo(file, filePath, line);
+        }
+        else if (line.starts_with("static const u8") && line.contains("_Frame"))
+        {
+            ParseAnimation(file, filePath, line);
         }
     }
 

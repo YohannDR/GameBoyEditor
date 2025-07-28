@@ -28,6 +28,7 @@
     <ClCompile Include="externals\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\animation_editor.cpp" />
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\edit_sprite_window.cpp" />
     <ClCompile Include="src\graphics_editor.cpp" />
@@ -52,6 +53,7 @@
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="externals\KHR\khrplatform.h" />
     <ClInclude Include="include\animation.hpp" />
+    <ClInclude Include="include\animation_editor.hpp" />
     <ClInclude Include="include\application.hpp" />
     <ClInclude Include="include\color.hpp" />
     <ClInclude Include="include\core.hpp" />

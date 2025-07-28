@@ -11,7 +11,8 @@ enum Color : uint8_t
     White,
     LightGrey,
     DarkGrey,
-    Black
+    Black,
+    Transparent
 };
 
 constexpr uint32_t GetRgbColor(const Color c)
@@ -22,6 +23,7 @@ constexpr uint32_t GetRgbColor(const Color c)
         case LightGrey: return IM_COL32(0xC0, 0xC0, 0xC0, 0xFF);
         case DarkGrey: return IM_COL32(0x80, 0x80, 0x80, 0xFF);
         case Black: return IM_COL32(0x00, 0x00, 0x00, 0xFF);
+        case Transparent: return IM_COL32(0x00, 0x00, 0x00, 0x00);
     }
 
     return 0x000000FF;

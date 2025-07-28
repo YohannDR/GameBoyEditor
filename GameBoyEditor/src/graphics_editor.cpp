@@ -11,6 +11,7 @@ void GraphicsEditor::Update()
 {
     DrawGraphicsSelector();
     DrawPalette();
+
     if (m_SelectedGraphics != "<None>")
     {
         DrawCurrentTile();
@@ -46,7 +47,7 @@ void GraphicsEditor::DrawGraphics()
 
     Ui::CreateSubWindow("graphicsWindow", ImGuiChildFlags_ResizeX);
 
-    size_t tileAmount = graphics.size() / 16;
+    const size_t tileAmount = graphics.size() / 16;
     if (ImGui::Button("Add tile"))
     {
         for (size_t i = 0; i < 16; i++)
@@ -74,7 +75,6 @@ void GraphicsEditor::DrawCurrentTile()
 {
     std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
     const size_t tileAmount = graphics.size() / 16;
-    const size_t index = m_SelectedTile * 16;
 
     Ui::CreateSubWindow("tileWindow", ImGuiChildFlags_ResizeX);
 
@@ -83,7 +83,7 @@ void GraphicsEditor::DrawCurrentTile()
 
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    Ui::DrawTile(position, graphics, index, m_ColorPalette, static_cast<float_t>(m_PixelSize));
+    Ui::DrawTile(position, graphics, m_SelectedTile, m_ColorPalette, static_cast<float_t>(m_PixelSize));
     const size_t pixelIndex = Ui::DrawSelectSquare(position, ImVec2(8.f, 8.f), static_cast<float_t>(m_PixelSize));
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && pixelIndex != std::numeric_limits<size_t>::max())
@@ -91,8 +91,8 @@ void GraphicsEditor::DrawCurrentTile()
         const Color color = m_ColorPalette[m_SelectedColor];
         const size_t bitIndex = 7 - pixelIndex % 8;
 
-        uint8_t& plane0 = graphics[index + pixelIndex / 8 * 2 + 0];
-        uint8_t& plane1 = graphics[index + pixelIndex / 8 * 2 + 1];
+        uint8_t& plane0 = graphics[m_SelectedTile * 16 + pixelIndex / 8 * 2 + 0];
+        uint8_t& plane1 = graphics[m_SelectedTile * 16 + pixelIndex / 8 * 2 + 1];
 
         plane0 = static_cast<uint8_t>((plane0 & ~(1 << bitIndex)) | (color >> 0 & 1) << bitIndex);
         plane1 = static_cast<uint8_t>((plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex);

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "animation.hpp"
 #include "core.hpp"
 #include "room.hpp"
 
@@ -31,6 +32,7 @@ public:
     static inline std::unordered_map<std::string, std::vector<uint8_t>> clipdata;
     static inline std::vector<Room> rooms;
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
+    static inline std::unordered_map<std::string, Animation> animations;
 
     static inline std::unordered_map<std::string, std::vector<std::pair<SymbolType, std::string>>> fileAssociations;
 
@@ -43,6 +45,8 @@ private:
     static bool_t ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseAnimation(std::ifstream& file, const std::filesystem::path& path, std::string& line);
+
     static void ParseEnums();
 
     static Palette ParsePalette(const std::string& pal);

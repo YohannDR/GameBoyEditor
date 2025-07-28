@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "animation_editor.hpp"
 #include "application.hpp"
 #include "edit_sprite_window.hpp"
 #include "graphics_editor.hpp"
@@ -15,6 +16,7 @@ void Ui::Init()
     m_Windows.push_back(new GraphicsEditor());
     m_Windows.push_back(new RoomEditor());
     m_Windows.push_back(new EditSpriteWindow());
+    m_Windows.push_back(new AnimationEditor());
 
     ShowWindow<RoomEditor>();
 }
@@ -30,8 +32,10 @@ void Ui::MainMenuBar()
         if (ImGui::MenuItem("Locate project"))
             openPopup = true;
 
+        ImGui::BeginDisabled(!Application::IsProjectLoaded());
         if (ImGui::MenuItem("Build"))
             Application::BuildRom(true);
+        ImGui::EndDisabled();
 
         ImGui::EndMenu();
     }
@@ -45,7 +49,7 @@ void Ui::MainMenuBar()
 
         if (ImGui::MenuItem("Animation editor"))
         {
-            
+            ShowWindow<AnimationEditor>();
         }
 
         ImGui::EndMenu();
@@ -62,6 +66,8 @@ void Ui::MainMenuBar()
         {
             
         }
+
+        ImGui::EndMenu();
     }
 
     ImGui::EndMainMenuBar();
@@ -176,8 +182,8 @@ void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, c
 
     for (size_t i = 0; i < 8; i++)
     {
-        const uint8_t plane0 = graphics[graphicsIndex + i * 2 + 0];
-        const uint8_t plane1 = graphics[graphicsIndex + i * 2 + 1];
+        const uint8_t plane0 = graphics[graphicsIndex * 16 + i * 2 + 0];
+        const uint8_t plane1 = graphics[graphicsIndex * 16 + i * 2 + 1];
 
         for (size_t j = 0; j < 8; j++)
         {
@@ -218,7 +224,7 @@ void Ui::DrawGraphics(const ImVec2 position, const std::vector<uint8_t>& graphic
             position.y + static_cast<float_t>(i / 16) * 8 * pixelSize  // NOLINT(bugprone-integer-division)
         );
 
-        DrawTile(tilePosition, graphics, i * 16, palette, pixelSize);
+        DrawTile(tilePosition, graphics, i, palette, pixelSize);
     }
 
     const float_t tileMax = static_cast<float_t>(tileAmount);
@@ -256,10 +262,10 @@ size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const floa
     return index;
 }
 
-void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags, const ImVec2 size)
+void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags, const ImVec2 size, const uint32_t bgColor)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(50, 50, 50, 255));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, bgColor);
     ImGui::BeginChild(name, size, ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();

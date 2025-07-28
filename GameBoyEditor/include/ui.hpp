@@ -18,7 +18,7 @@ public:
     static void DrawGraphics(ImVec2 position, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* selectedTile);
     static size_t DrawSelectSquare(ImVec2 position, ImVec2 size, float_t squareSize);
 
-    static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags, ImVec2 size = ImVec2(0, 0));
+    static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags, ImVec2 size = ImVec2(0, 0), uint32_t bgColor = IM_COL32(50, 50, 50, 255));
 
     template <typename T>
     static T* ShowWindow();
