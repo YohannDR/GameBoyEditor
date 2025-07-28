@@ -21,18 +21,24 @@ public:
     static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags, ImVec2 size = ImVec2(0, 0));
 
     template <typename T>
-    static void ShowWindow();
+    static T* ShowWindow();
 
 private:
     static inline std::vector<UiWindow*> m_Windows;
 };
 
 template <typename T>
-void Ui::ShowWindow()
+T* Ui::ShowWindow()
 {
     for (UiWindow* const w : m_Windows)
     {
-        if (dynamic_cast<T*>(w))
-            w->hidden = false;
+        T* const tW = dynamic_cast<T*>(w);
+        if (tW)
+        {
+            w->open = true;
+            return tW;
+        }
     }
+
+    return nullptr;
 }

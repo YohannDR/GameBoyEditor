@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "application.hpp"
+#include "edit_sprite_window.hpp"
 #include "graphics_editor.hpp"
 #include "room_editor.hpp"
 #include "imgui/imgui.h"
@@ -13,6 +14,7 @@ void Ui::Init()
 {
     m_Windows.push_back(new GraphicsEditor());
     m_Windows.push_back(new RoomEditor());
+    m_Windows.push_back(new EditSpriteWindow());
 
     ShowWindow<RoomEditor>();
 }
@@ -84,10 +86,10 @@ void Ui::DrawWindows()
 {
     for (UiWindow* const w : m_Windows)
     {
-        if (w->hidden)
+        if (!w->open)
             continue;
         
-        if (ImGui::Begin(w->name.c_str()))
+        if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr))
         {
             w->FetchInfo();
             w->Update();

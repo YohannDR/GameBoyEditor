@@ -38,6 +38,11 @@ private:
     EditingMode m_EditingMode = EditingMode::Tile;
 
     SpriteData* m_SelectedSprite = nullptr;
+    SpriteData* m_HoveredSprite = nullptr;
+
+    bool_t m_IsObjectEditPopupOpen = false;
+    size_t m_BackupCursorX = 0;
+    size_t m_BackupCursorY = 0;
 
     static constexpr float_t PixelSize = 4;
 };

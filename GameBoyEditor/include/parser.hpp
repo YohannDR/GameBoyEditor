@@ -26,12 +26,6 @@ class Parser
 public:
     static bool_t ParseProject();
 
-    static bool_t ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
-    static bool_t ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
-    static bool_t ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
-
-    static Palette ParsePalette(const std::string& pal);
-
     static inline std::unordered_map<std::string, std::vector<uint8_t>> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
     static inline std::unordered_map<std::string, std::vector<uint8_t>> clipdata;
@@ -40,6 +34,16 @@ public:
 
     static inline std::unordered_map<std::string, std::vector<std::pair<SymbolType, std::string>>> fileAssociations;
 
+    static inline std::vector<std::string> spriteIds;
+    static inline std::vector<std::string> clipdataNames;
+
 private:
     static bool_t ParseFileContents(const std::filesystem::path& filePath);
+
+    static bool_t ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static void ParseEnums();
+
+    static Palette ParsePalette(const std::string& pal);
 };

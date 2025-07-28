@@ -29,6 +29,7 @@
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\edit_sprite_window.cpp" />
     <ClCompile Include="src\graphics_editor.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parser.cpp" />
@@ -54,6 +55,7 @@
     <ClInclude Include="include\application.hpp" />
     <ClInclude Include="include\color.hpp" />
     <ClInclude Include="include\core.hpp" />
+    <ClInclude Include="include\edit_sprite_window.hpp" />
     <ClInclude Include="include\graphics_editor.hpp" />
     <ClInclude Include="include\parser.hpp" />
     <ClInclude Include="include\room.hpp" />

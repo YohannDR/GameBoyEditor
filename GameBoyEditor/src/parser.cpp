@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "application.hpp"
+#include "GLFW/glfw3native.h"
 
 bool_t Parser::ParseProject()
 {
@@ -24,6 +25,8 @@ bool_t Parser::ParseProject()
         if (!ParseFileContents(file))
             return false;
     }
+
+    ParseEnums();
 
     return true;
 }
@@ -187,6 +190,78 @@ bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path&
     fileAssociations[filePath.string()].emplace_back(SymbolType::SpriteData, symbolName);
 
     return true;
+}
+
+void Parser::ParseEnums()
+{
+    // Look for specific enums in specific files
+
+    const std::filesystem::path path = Application::projectPath;
+    std::filesystem::path filePath = path / "include/sprite.h";
+
+    std::ifstream file;
+    file.open(filePath);
+    std::string line;
+    bool_t parsing = false;
+
+    while (file)
+    {
+        std::getline(file, line);
+
+        if (line.contains("enum SpriteType"))
+        {
+            parsing = true;
+            continue;
+        }
+
+        if (!parsing)
+            continue;
+
+        if (line.contains("STYPE_END"))
+        {
+            parsing = false;
+            break;
+        }
+
+        if (line.contains("STYPE"))
+        {
+            const std::string name = line.substr(sizeof("    ") - 1, line.find(',') - sizeof("    ") + 1);
+            spriteIds.push_back(name);
+        }
+    }
+
+    file.close();
+
+    filePath = path / "include/bg_clip.h";
+
+    file.open(filePath);
+    while (file)
+    {
+        std::getline(file, line);
+
+        if (line.contains("enum ClipdataValue"))
+        {
+            parsing = true;
+            continue;
+        }
+
+        if (!parsing)
+            continue;
+
+        if (line.contains("CLIPDATA_END"))
+        {
+            parsing = false;
+            break;
+        }
+
+        if (line.contains("CLIPDATA"))
+        {
+            const std::string name = line.substr(sizeof("    ") - 1, line.find(',') - sizeof("    ") + 1);
+            clipdataNames.push_back(name);
+        }
+    }
+
+    file.close();
 }
 
 Palette Parser::ParsePalette(const std::string& pal)

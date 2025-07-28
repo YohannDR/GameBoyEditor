@@ -1,14 +1,16 @@
 ﻿#include "room_editor.hpp"
 
-#include <iostream>
+#include <functional>
 #include <ranges>
 
 #include "application.hpp"
+#include "edit_sprite_window.hpp"
 #include "parser.hpp"
 #include "ui.hpp"
 
 void RoomEditor::Update()
 {
+    ImGui::ShowDemoWindow();
     if (!Application::IsProjectLoaded())
         return;
 
@@ -163,6 +165,9 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
 
     ImDrawList* const dl = ImGui::GetWindowDrawList();
 
+    if (!m_IsObjectEditPopupOpen)
+        m_HoveredSprite = nullptr;
+
     for (SpriteData& sprite : spriteData)
     {
         if (m_EditingMode == EditingMode::Object)
@@ -179,9 +184,12 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
                     m_SelectedSprite = nullptr;
             }
 
-            if (m_SelectedSprite == nullptr && inBounds && cursorX == sprite.x && cursorY + 1 == sprite.y)
+            if (inBounds && cursorX == sprite.x && cursorY + 1 == sprite.y)
             {
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                if (!m_IsObjectEditPopupOpen)
+                    m_HoveredSprite = &sprite;
+
+                if (m_SelectedSprite == nullptr && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
                     m_SelectedSprite = &sprite;
             }
         }
@@ -194,6 +202,55 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
         const ImVec2 p2 = ImVec2(p1.x + PixelSize * 8, p1.y + PixelSize * 8);
 
         dl->AddRect(p1, p2, IM_COL32(0x00, 0xFF, 0x00, 0xFF), 0, 0, 4);
+    }
+
+    if (inBounds && m_EditingMode == EditingMode::Object)
+    {
+        if (ImGui::BeginPopupContextItem("objectEditPopup"))
+        {
+            if (!m_IsObjectEditPopupOpen)
+            {
+                m_BackupCursorX = cursorX;
+                m_BackupCursorY = cursorY + 1;
+                m_IsObjectEditPopupOpen = true;
+            }
+
+            ImGui::Text("Object menu");
+
+            ImGui::BeginDisabled(spriteData.size() == 20);
+            if (ImGui::Button("Add sprite"))
+            {
+                spriteData.emplace_back(m_BackupCursorX, m_BackupCursorY, "STYPE_NONE", 0);
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+            ImGui::EndDisabled();
+
+            ImGui::BeginDisabled(m_HoveredSprite == nullptr);
+            if (ImGui::Button("Edit sprite"))
+            {
+                Ui::ShowWindow<EditSpriteWindow>()->Setup(m_HoveredSprite);
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+
+            if (ImGui::Button("Remove sprite"))
+            {
+                std::erase(spriteData, *m_HoveredSprite);
+                m_HoveredSprite = nullptr;
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+            ImGui::EndDisabled();
+
+            ImGui::EndPopup();
+        }
+
+        if (!ImGui::IsPopupOpen("objectEditPopup"))
+            m_IsObjectEditPopupOpen = false;
     }
 }
 

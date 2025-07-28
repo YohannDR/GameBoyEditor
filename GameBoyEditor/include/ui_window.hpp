@@ -22,7 +22,8 @@ public:
     }
 
     std::string name;
-    bool_t hidden = true;
+    bool_t canBeClosed = true;
+    bool_t open = false;
 
 protected:
     ImVec2 m_Position;
