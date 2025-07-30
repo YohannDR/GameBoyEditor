@@ -1,4 +1,4 @@
-﻿#include "edit_sprite_window.hpp"
+﻿#include "editors/edit_sprite_window.hpp"
 
 #include "parser.hpp"
 

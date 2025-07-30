@@ -2,11 +2,11 @@
 
 #include <iostream>
 
-#include "animation_editor.hpp"
 #include "application.hpp"
-#include "edit_sprite_window.hpp"
-#include "graphics_editor.hpp"
-#include "room_editor.hpp"
+#include "editors/animation_editor.hpp"
+#include "editors/edit_sprite_window.hpp"
+#include "editors/graphics_editor.hpp"
+#include "editors/room_editor.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"

@@ -1,4 +1,4 @@
-﻿#include "graphics_editor.hpp"
+﻿#include "editors/graphics_editor.hpp"
 
 #include <ranges>
 

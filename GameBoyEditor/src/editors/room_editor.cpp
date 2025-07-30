@@ -1,12 +1,12 @@
-﻿#include "room_editor.hpp"
+﻿#include "editors/room_editor.hpp"
 
 #include <functional>
 #include <ranges>
 
 #include "application.hpp"
-#include "edit_sprite_window.hpp"
 #include "parser.hpp"
 #include "ui.hpp"
+#include "editors/edit_sprite_window.hpp"
 
 void RoomEditor::Update()
 {

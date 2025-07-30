@@ -1,7 +1,6 @@
-﻿#include "animation_editor.hpp"
+﻿#include "editors/animation_editor.hpp"
 
 #include <functional>
-#include <iostream>
 #include <ranges>
 
 #include "parser.hpp"
@@ -79,6 +78,7 @@ void AnimationEditor::DrawPlaybackControls()
     {
         m_AnimationTimer = 0;
         m_CurrentFrame = 0;
+        m_CurrentPart = 0;
         m_Playing ^= true;
     }
 }
