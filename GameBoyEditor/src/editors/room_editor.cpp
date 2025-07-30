@@ -1,6 +1,7 @@
 ﻿#include "editors/room_editor.hpp"
 
 #include <functional>
+#include <iostream>
 #include <ranges>
 
 #include "application.hpp"
@@ -151,7 +152,22 @@ void RoomEditor::DrawRoom()
     const size_t y = index / width;
 
     if (m_EditingMode == EditingMode::Tile && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds)
+    {
+        if (!m_EditTilemapAction)
+            m_EditTilemapAction = new EditTilemapAction(&tilemap);
+
+        m_EditTilemapAction->AddEdit(x, y, tilemap[y][x], static_cast<uint8_t>(m_SelectedTile));
         tilemap[y][x] = static_cast<uint8_t>(m_SelectedTile);
+    }
+
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    {
+        if (m_EditTilemapAction)
+        {
+            m_ActionQueue.Push(m_EditTilemapAction);
+            m_EditTilemapAction = nullptr;
+        }
+    }
 
     DrawSprites(position, inBounds, x, y);
 

@@ -97,8 +97,8 @@ void Ui::DrawWindows()
         
         if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr))
         {
-            w->FetchInfo();
             w->Update();
+            w->ProcessUndoRedo();
         }
 
         ImGui::End();

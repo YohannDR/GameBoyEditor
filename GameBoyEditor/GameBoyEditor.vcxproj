@@ -28,6 +28,8 @@
     <ClCompile Include="externals\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\actions\edit_tilemap_action.cpp" />
+    <ClCompile Include="src\action_queue.cpp" />
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\editors\animation_editor.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -344,6 +346,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parser.cpp" />
     <ClCompile Include="src\ui.cpp" />
+    <ClCompile Include="src\ui_window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\glad\glad.h" />
@@ -360,6 +363,9 @@
     <ClInclude Include="externals\imgui\imstb_textedit.h" />
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="externals\KHR\khrplatform.h" />
+    <ClInclude Include="include\action.hpp" />
+    <ClInclude Include="include\actions\edit_tilemap_action.hpp" />
+    <ClInclude Include="include\action_queue.hpp" />
     <ClInclude Include="include\animation.hpp" />
     <ClInclude Include="include\application.hpp" />
     <ClInclude Include="include\color.hpp" />

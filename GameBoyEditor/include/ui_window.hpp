@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "action_queue.hpp"
 #include "core.hpp"
 #include "imgui/imgui.h"
 
@@ -16,15 +17,12 @@ public:
     virtual void Update() = 0;
     virtual void OnProjectLoaded() {}
 
-    void FetchInfo()
-    {
-        m_Position = ImGui::GetWindowPos();
-    }
+    void ProcessUndoRedo();
 
     std::string name;
     bool_t canBeClosed = true;
     bool_t open = false;
 
 protected:
-    ImVec2 m_Position;
+    ActionQueue m_ActionQueue;
 };

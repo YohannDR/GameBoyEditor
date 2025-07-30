@@ -2,6 +2,7 @@
 
 #include "parser.hpp"
 #include "ui_window.hpp"
+#include "actions/edit_tilemap_action.hpp"
 
 class RoomEditor : public UiWindow
 {
@@ -43,6 +44,8 @@ private:
     bool_t m_IsObjectEditPopupOpen = false;
     size_t m_BackupCursorX = 0;
     size_t m_BackupCursorY = 0;
+
+    EditTilemapAction* m_EditTilemapAction = nullptr;
 
     static constexpr float_t PixelSize = 4;
 };
