@@ -10,6 +10,7 @@
 #include "room.hpp"
 
 using Tilemap = std::vector<std::vector<uint8_t>>;
+using Graphics = std::vector<uint8_t>;
 
 enum class SymbolType : uint8_t
 {
@@ -27,7 +28,7 @@ class Parser
 public:
     static bool_t ParseProject();
 
-    static inline std::unordered_map<std::string, std::vector<uint8_t>> graphics;
+    static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
     static inline std::unordered_map<std::string, std::vector<uint8_t>> clipdata;
     static inline std::vector<Room> rooms;

@@ -15,8 +15,6 @@ public:
 
     void AddEdit(uint8_t x, uint8_t y, uint8_t oldValue, uint8_t newValue);
 
-    _NODISCARD size_t GetEditCount() const { return m_Edits.size(); }
-
 private:
     struct BlockEdit
     {

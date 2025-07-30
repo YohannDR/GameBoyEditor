@@ -30,6 +30,8 @@ private:
     void LoadRoom();
     void ResizeRoom() const;
 
+    void ChangeEditingMode(EditingMode newMode);
+
     uint8_t m_Width = 0;
     uint8_t m_Height = 0;
 

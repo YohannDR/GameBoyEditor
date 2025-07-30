@@ -22,12 +22,7 @@ void RoomEditor::Update()
     DrawRoom();
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-    {
-        if (m_EditingMode == EditingMode::Tile)
-            m_EditingMode = EditingMode::Object;
-        else
-            m_EditingMode = EditingMode::Tile;
-    }
+        ChangeEditingMode(m_EditingMode == EditingMode::Tile ? EditingMode::Object : EditingMode::Tile);
 }
 
 void RoomEditor::OnProjectLoaded()
@@ -68,9 +63,12 @@ void RoomEditor::DrawRoomId()
 
 void RoomEditor::DrawEditingMode()
 {
-    ImGui::RadioButton("Tile mode", reinterpret_cast<int*>(&m_EditingMode), 0);
+    bool_t changed = ImGui::RadioButton("Tile mode", reinterpret_cast<int*>(&m_EditingMode), 0);
     ImGui::SameLine();
-    ImGui::RadioButton("Object mode", reinterpret_cast<int*>(&m_EditingMode), 1);
+    changed |= ImGui::RadioButton("Object mode", reinterpret_cast<int*>(&m_EditingMode), 1);
+
+    if (changed)
+        ChangeEditingMode(m_EditingMode);
 }
 
 void RoomEditor::DrawResize()
@@ -104,7 +102,7 @@ void RoomEditor::DrawTileset()
         ImGui::EndCombo();
     }
 
-    const std::vector<uint8_t>& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
     Ui::DrawGraphics(position, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
@@ -113,7 +111,7 @@ void RoomEditor::DrawTileset()
 
 void RoomEditor::DrawRoom()
 {
-    const std::vector<uint8_t>& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
     const Palette palette = Parser::rooms[m_RoomId].colorPalette;
 
@@ -143,7 +141,7 @@ void RoomEditor::DrawRoom()
         }
     }
 
-    ImGui::Dummy(ImVec2(width * PixelSize * 8, height * PixelSize * 8));
+    ImGui::Dummy(ImVec2(static_cast<float_t>(width) * PixelSize * 8, static_cast<float_t>(height) * PixelSize * 8));
 
     const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), PixelSize * 8);
     const bool_t inBounds = index != std::numeric_limits<size_t>::max();
@@ -156,11 +154,11 @@ void RoomEditor::DrawRoom()
         if (!m_EditTilemapAction)
             m_EditTilemapAction = new EditTilemapAction(&tilemap);
 
-        m_EditTilemapAction->AddEdit(x, y, tilemap[y][x], static_cast<uint8_t>(m_SelectedTile));
+        m_EditTilemapAction->AddEdit(static_cast<uint8_t>(x), static_cast<uint8_t>(y), tilemap[y][x], static_cast<uint8_t>(m_SelectedTile));
         tilemap[y][x] = static_cast<uint8_t>(m_SelectedTile);
     }
 
-    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    if (m_EditingMode == EditingMode::Tile && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
         if (m_EditTilemapAction)
         {
@@ -213,7 +211,10 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
             m_SelectedSprite = nullptr;
         }
 
-        const ImVec2 p1 = ImVec2(position.x + sprite.x * PixelSize * 8, position.y + (sprite.y - 1) * PixelSize * 8);
+        const ImVec2 p1 = ImVec2(
+            position.x + static_cast<float_t>(sprite.x) * PixelSize * 8,
+            position.y + static_cast<float_t>(sprite.y - 1) * PixelSize * 8
+        );
         const ImVec2 p2 = ImVec2(p1.x + PixelSize * 8, p1.y + PixelSize * 8);
 
         dl->AddRect(p1, p2, IM_COL32(0x00, 0xFF, 0x00, 0xFF), 0, 0, 4);
@@ -285,4 +286,18 @@ void RoomEditor::ResizeRoom() const
 
     for (std::vector<uint8_t>& v : tilemap)
         v.resize(m_Width);
+}
+
+void RoomEditor::ChangeEditingMode(const EditingMode newMode)
+{
+    m_EditingMode = newMode;
+
+    if (m_EditingMode == EditingMode::Object)
+    {
+        if (m_EditTilemapAction)
+        {
+            m_ActionQueue.Push(m_EditTilemapAction);
+            m_EditTilemapAction = nullptr;
+        }
+    }
 }

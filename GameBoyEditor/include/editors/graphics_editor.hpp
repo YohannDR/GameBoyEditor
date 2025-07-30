@@ -2,6 +2,7 @@
 
 #include "color.hpp"
 #include "ui_window.hpp"
+#include "actions/plot_pixel_action.hpp"
 
 class GraphicsEditor : public UiWindow
 {
@@ -22,4 +23,6 @@ private:
     size_t m_SelectedColor = 0;
     size_t m_SelectedTile = 0;
     int32_t m_PixelSize = 25;
+
+    PlotPixelAction* m_PlotPixelAction = nullptr;
 };

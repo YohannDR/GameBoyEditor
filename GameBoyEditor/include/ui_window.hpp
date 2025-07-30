@@ -18,6 +18,7 @@ public:
     virtual void OnProjectLoaded() {}
 
     void ProcessUndoRedo();
+    void DrawMenuBar();
 
     std::string name;
     bool_t canBeClosed = true;

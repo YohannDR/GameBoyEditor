@@ -94,11 +94,12 @@ void Ui::DrawWindows()
     {
         if (!w->open)
             continue;
-        
-        if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr))
+
+        if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr, ImGuiWindowFlags_MenuBar))
         {
             w->Update();
             w->ProcessUndoRedo();
+            w->DrawMenuBar();
         }
 
         ImGui::End();

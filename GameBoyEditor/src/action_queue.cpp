@@ -20,10 +20,7 @@ void ActionQueue::Push(Action* action, const bool_t perform)
 
 void ActionQueue::StepForward()
 {
-    if (IsAtEnd())
-        return;
-
-    if (m_Queue[m_QueueIndex] == nullptr)
+    if (!CanGoForward())
         return;
 
     m_Queue[m_QueueIndex]->Do();
@@ -32,16 +29,20 @@ void ActionQueue::StepForward()
 
 void ActionQueue::StepBack()
 {
-    if (IsEmpty())
+    if (!CanGoBackward())
         return;
 
     m_QueueIndex--;
     m_Queue[m_QueueIndex]->Undo();
 }
 
-bool_t ActionQueue::IsEmpty() const { return m_QueueIndex == 0; }
+bool_t ActionQueue::IsAtBeginning() const { return m_QueueIndex == 0; }
 
 bool_t ActionQueue::IsAtEnd() const { return m_QueueIndex == QueueSize; }
+
+bool_t ActionQueue::CanGoForward() const { return !IsAtEnd() && m_Queue[m_QueueIndex] != nullptr; }
+
+bool_t ActionQueue::CanGoBackward() const { return !IsAtBeginning(); }
 
 void ActionQueue::ShiftActions()
 {
