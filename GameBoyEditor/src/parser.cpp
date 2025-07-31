@@ -78,6 +78,9 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
     {
         std::getline(file, line);
 
+        if (line.contains("extern"))
+            continue;
+
         if (line.starts_with("const u8 "))
         {
             ParseGraphicsArray(file, filePath, line);
@@ -311,7 +314,7 @@ bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& 
     animationFrame = 0;
 
     const size_t idx = line.find('[');
-    const std::string symbolName = line.substr(sizeof("static const struct AnimData"), idx - sizeof("static const struct AnimData"));
+    const std::string symbolName = line.substr(sizeof("const struct AnimData"), idx - sizeof("const struct AnimData"));
 
     // Parse animation data
     while (true)
@@ -461,7 +464,7 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
 {
     std::string line;
     bool_t deleting = false;
-    bool_t singleLineDelete = false;
+    size_t additionalLinesToDelete = 0;
 
     std::vector<std::string> lines;
 
@@ -469,13 +472,7 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
     {
         std::getline(file, line);
 
-        if (symbol.first == SymbolType::Animation)
-        {
-            lines.push_back(line);
-            continue;
-        }
-
-        if (line.contains(symbol.second))
+        if (line.contains(symbol.second) && line.contains("const") && !line.contains("extern"))
         {
             deleting = true;
             continue;
@@ -483,17 +480,27 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
 
         if (deleting)
         {
-            if (line.contains("};"))
+            const char_t* const terminator = symbol.first == SymbolType::Animation ? "SPRITE_ANIM_TERMINATOR" : "};";
+            if (line.contains(terminator))
             {
                 deleting = false;
-                // Also need to consume the empty line afterwards
-                singleLineDelete = true;
+
+                if (symbol.first == SymbolType::Animation)
+                {
+                    // Need to consume the }; and the empty line afterwards
+                    additionalLinesToDelete = 2;
+                }
+                else
+                {
+                    // Also need to consume the empty line afterwards
+                    additionalLinesToDelete = 1;
+                }
             }
         }
         else
         {
-            if (singleLineDelete)
-                singleLineDelete = false;
+            if (additionalLinesToDelete != 0)
+                additionalLinesToDelete--;
             else
                 lines.push_back(line);
         }
@@ -516,7 +523,7 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
 
 void Parser::SaveGraphics(std::fstream& file, const std::string& symbolName)
 {
-    file << "const u8 " << symbolName << "[] = {\n";
+    file << "\nconst u8 " << symbolName << "[] = {\n";
 
     const Graphics& gfx = graphics[symbolName];
     const size_t tileAmount = gfx.size() / 16;
@@ -533,12 +540,12 @@ void Parser::SaveGraphics(std::fstream& file, const std::string& symbolName)
         }
     }
 
-    file << "};\n\n";
+    file << "};\n";
 }
 
 void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
 {
-    file << "const u8 " << symbolName << "[] = {\n";
+    file << "\nconst u8 " << symbolName << "[] = {\n";
 
     const Tilemap& tilemap = tilemaps[symbolName];
 
@@ -555,12 +562,12 @@ void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
         }
     }
 
-    file << "};\n\n";
+    file << "};\n";
 }
 
 void Parser::SaveClipdata(std::fstream& file, const std::string& symbolName)
 {
-    file << "const u8 " << symbolName << "[] = {\n";
+    file << "\nconst u8 " << symbolName << "[] = {\n";
 
     const Tilemap& tilemap = clipdata[symbolName];
 
@@ -577,12 +584,12 @@ void Parser::SaveClipdata(std::fstream& file, const std::string& symbolName)
         }
     }
 
-    file << "};\n\n";
+    file << "};\n";
 }
 
 void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
 {
-    file << "const struct RoomSprite " << symbolName << "[] = {\n";
+    file << "\nconst struct RoomSprite " << symbolName << "[] = {\n";
 
     const std::vector<SpriteData>& spriteData = sprites[symbolName];
 
@@ -596,16 +603,48 @@ void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
         file << TAB "},\n";
     }
 
-    file << TAB "[" << spriteData.size() << "] = ROOM_SPRITE_TERMINATOR\n};\n\n";
+    file << TAB "[" << spriteData.size() << "] = ROOM_SPRITE_TERMINATOR\n};\n";
 }
 
 void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
 {
+    const Animation& animation = animations[symbolName];
+
+    for (size_t i = 0; i < animation.size(); i++)
+    {
+        const size_t oamCount = animation[i].oam.size();
+
+        file << "\nstatic const u8 " << symbolName << "_Frame" << i << "[OAM_DATA_SIZE(" << oamCount << ")] = {\n";
+        file << TAB << oamCount << ",\n";
+
+        for (size_t j = 0; j < oamCount; j++)
+        {
+            file << TAB << "OAM_POS(" << static_cast<int32_t>(animation[i].oam[j].y) << "), ";
+            file << "OAM_POS(" << static_cast<int32_t>(animation[i].oam[j].x) << "), ";
+            file << static_cast<int32_t>(animation[i].oam[j].tileIndex) << ", ";
+            file << static_cast<int32_t>(animation[i].oam[j].properties) << ",\n";
+        }
+
+        file << "};\n";
+    }
+
+    file << "\nconst struct AnimData " << symbolName << "[] = {\n";
+    
+    for (size_t i = 0; i < animation.size(); i++)
+    {
+        file << TAB << '[' << i << "] = {\n";
+        file << TAB TAB << ".oamPointer = " << symbolName << "_Frame" << i << ",\n";
+        file << TAB TAB << ".duration = " << static_cast<size_t>(animation[i].duration) << ",\n";
+        file << TAB "},\n";
+    }
+
+    file << TAB << '[' << animation.size() << "] = SPRITE_ANIM_TERMINATOR\n";
+    file << "};\n";
 }
 
 void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
 {
-    file << "const struct RoomInfo " << symbolName << "[] = {\n";
+    file << "\nconst struct RoomInfo " << symbolName << "[] = {\n";
 
     for (size_t i = 0; i < rooms.size(); i++)
     {
@@ -618,7 +657,7 @@ void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
         file << TAB "},\n";
     }
 
-    file << "};\n\n";
+    file << "};\n";
 }
 
 std::string Parser::ToHex(const size_t value)
