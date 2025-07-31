@@ -206,6 +206,10 @@ void AnimationEditor::DrawOam() const
             Ui::DrawCross(position, m_OamPixelSize);
     }
 
+    const ImVec2 p1 = ImVec2(middle.x + animation[m_CurrentFrame].oam[m_CurrentPart].x * m_OamPixelSize, middle.y + animation[m_CurrentFrame].oam[m_CurrentPart].y * m_OamPixelSize);
+    const ImVec2 p2 = ImVec2(p1.x + 8 * m_OamPixelSize, p1.y + 8 * m_OamPixelSize);
+    ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+
     ImGui::Dummy(ImVec2(160 * m_OamPixelSize, 144 * m_OamPixelSize));
     ImGui::EndChild();
 }
