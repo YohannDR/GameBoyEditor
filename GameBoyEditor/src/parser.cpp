@@ -434,6 +434,29 @@ Palette Parser::ParsePalette(const std::string& pal)
     return palette;
 }
 
+std::string Parser::MakePalette(const Palette& pal)
+{
+    const std::string colorNames[] = {
+        "COLOR_WHITE",
+        "COLOR_LIGHT_GRAY",
+        "COLOR_DARK_GRAY",
+        "COLOR_BLACK"
+    };
+
+    std::string result = "MAKE_PALETTE(";
+
+    result += colorNames[pal[0]];
+    result += ", ";
+    result += colorNames[pal[1]];
+    result += ", ";
+    result += colorNames[pal[2]];
+    result += ", ";
+    result += colorNames[pal[3]];
+    result += ')';
+
+    return result;
+}
+
 std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesystem::path& fileName, const SymbolInfo& symbol)
 {
     std::string line;
@@ -446,7 +469,7 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
     {
         std::getline(file, line);
 
-        if (symbol.first == SymbolType::Animation || symbol.first == SymbolType::RoomData)
+        if (symbol.first == SymbolType::Animation)
         {
             lines.push_back(line);
             continue;
@@ -582,6 +605,20 @@ void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
 
 void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
 {
+    file << "const struct RoomInfo " << symbolName << "[] = {\n";
+
+    for (size_t i = 0; i < rooms.size(); i++)
+    {
+        file << TAB "[" << i << "] = {\n";
+        file << TAB TAB ".graphics = " << rooms[i].graphics << ",\n";
+        file << TAB TAB ".tilemap = " << rooms[i].tilemap << ",\n";
+        file << TAB TAB ".clipdata = " << rooms[i].clipdata << ",\n";
+        file << TAB TAB ".bgPalette = " << MakePalette(rooms[i].colorPalette) << ",\n";
+        file << TAB TAB ".spriteData = " << rooms[i].spriteData << ",\n";
+        file << TAB "},\n";
+    }
+
+    file << "};\n\n";
 }
 
 std::string Parser::ToHex(const size_t value)

@@ -55,6 +55,7 @@ private:
     static void ParseEnums();
 
     static Palette ParsePalette(const std::string& pal);
+    static std::string MakePalette(const Palette& pal);
 
     static std::fstream RemoveExistingSymbol(std::fstream& file, const std::filesystem::path& fileName, const SymbolInfo& symbol);
 
