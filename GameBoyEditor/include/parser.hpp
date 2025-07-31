@@ -34,7 +34,7 @@ public:
 
     static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
-    static inline std::unordered_map<std::string, std::vector<uint8_t>> clipdata;
+    static inline std::unordered_map<std::string, Tilemap> clipdata;
     static inline std::vector<Room> rooms;
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
     static inline std::unordered_map<std::string, Animation> animations;

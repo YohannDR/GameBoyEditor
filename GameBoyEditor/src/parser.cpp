@@ -4,7 +4,8 @@
 #include <iostream>
 
 #include "application.hpp"
-#include "GLFW/glfw3native.h"
+
+#define TAB "    "
 
 bool_t Parser::ParseProject()
 {
@@ -183,7 +184,14 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
     }
     else if (type == SymbolType::Clipdata)
     {
-        // m_Clipdata[symbolName] = { width, height, data };
+        clipdata[symbolName].resize(height);
+
+        const size_t h = static_cast<size_t>(height);
+        for (size_t i = 0; i < h; i++)
+        {
+            const Tilemap::difference_type index = width * i;
+            clipdata[symbolName][i] = std::vector(data.begin() + index, data.begin() + index + width);
+        }
     }
 
     fileAssociations[filePath.string()].emplace_back(type, symbolName);
@@ -438,7 +446,7 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
     {
         std::getline(file, line);
 
-        if (symbol.first == SymbolType::Animation || symbol.first == SymbolType::Clipdata || symbol.first == SymbolType::SpriteData || symbol.first == SymbolType::RoomData)
+        if (symbol.first == SymbolType::Animation || symbol.first == SymbolType::RoomData)
         {
             lines.push_back(line);
             continue;
@@ -490,11 +498,11 @@ void Parser::SaveGraphics(std::fstream& file, const std::string& symbolName)
     const Graphics& gfx = graphics[symbolName];
     const size_t tileAmount = gfx.size() / 16;
 
-    file << '\t' << tileAmount << ",\n\n";
+    file << TAB << tileAmount << ",\n\n";
 
     for (size_t i = 0; i < tileAmount; i++)
     {
-        file << '\t';
+        file << TAB;
         for (size_t j = 0; j < 16; j++)
         {
             file << ToHex(gfx[i * 16 + j]) << ',';
@@ -511,11 +519,11 @@ void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
 
     const Tilemap& tilemap = tilemaps[symbolName];
 
-    file << '\t' << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
+    file << TAB << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
 
     for (const std::vector<uint8_t>& row : tilemap)
     {
-        file << '\t';
+        file << TAB;
         for (size_t j = 0; j < row.size(); j++)
         {
             file << ToHex(row[j]) << ',';
@@ -529,10 +537,43 @@ void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
 
 void Parser::SaveClipdata(std::fstream& file, const std::string& symbolName)
 {
+    file << "const u8 " << symbolName << "[] = {\n";
+
+    const Tilemap& tilemap = clipdata[symbolName];
+
+    file << TAB << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
+
+    for (const std::vector<uint8_t>& row : tilemap)
+    {
+        file << TAB;
+        for (size_t j = 0; j < row.size(); j++)
+        {
+            file << ToHex(row[j]) << ',';
+            if (j == row.size() - 1)
+                file << '\n';
+        }
+    }
+
+    file << "};\n\n";
 }
 
 void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
 {
+    file << "const struct RoomSprite " << symbolName << "[] = {\n";
+
+    const std::vector<SpriteData>& spriteData = sprites[symbolName];
+
+    for (size_t i = 0; i < spriteData.size(); i++)
+    {
+        file << TAB "[" << i << "] = {\n";
+        file << TAB TAB ".x = " << static_cast<size_t>(spriteData[i].x) << ",\n";
+        file << TAB TAB ".y = " << static_cast<size_t>(spriteData[i].y) << ",\n";
+        file << TAB TAB ".id = " << spriteData[i].id << ",\n";
+        file << TAB TAB ".part = " << static_cast<size_t>(spriteData[i].part) << '\n';
+        file << TAB "},\n";
+    }
+
+    file << TAB "[" << spriteData.size() << "] = ROOM_SPRITE_TERMINATOR\n};\n\n";
 }
 
 void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
