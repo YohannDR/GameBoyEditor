@@ -34,7 +34,16 @@ void Ui::MainMenuBar()
 
         ImGui::BeginDisabled(!Application::IsProjectLoaded());
         if (ImGui::MenuItem("Build"))
+        {
+            Parser::Save();
             Application::BuildRom(true);
+        }
+
+        if (ImGui::MenuItem("Save"))
+        {
+            Parser::Save();
+        }
+
         ImGui::EndDisabled();
 
         ImGui::EndMenu();
@@ -98,7 +107,7 @@ void Ui::DrawWindows()
         if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr, ImGuiWindowFlags_MenuBar))
         {
             w->Update();
-            w->ProcessUndoRedo();
+            w->ProcessShortcuts();
             w->DrawMenuBar();
         }
 

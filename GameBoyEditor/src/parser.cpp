@@ -31,6 +31,74 @@ bool_t Parser::ParseProject()
     return true;
 }
 
+bool_t Parser::Save()
+{
+    for (const std::pair<const std::string, std::vector<SymbolInfo>>& association : fileAssociations)
+    {
+        std::fstream file;
+        const std::filesystem::path filePath = association.first;
+        file.open(filePath, std::ifstream::out | std::ifstream::in | std::ifstream::app);
+
+        for (const SymbolInfo& symbolInfo : association.second)
+        {
+            file = RemoveExistingSymbol(file, filePath, symbolInfo);
+        }
+
+        for (const SymbolInfo& symbolInfo : association.second)
+        {
+            switch (symbolInfo.first)
+            {
+                case SymbolType::Graphics: SaveGraphics(file, symbolInfo.second); break;
+                case SymbolType::Tilemap: SaveTilemap(file, symbolInfo.second); break;
+                case SymbolType::Clipdata: SaveClipdata(file, symbolInfo.second); break;
+                case SymbolType::SpriteData: SaveSpriteData(file, symbolInfo.second); break;
+                case SymbolType::Animation: SaveAnimation(file, symbolInfo.second); break;
+                case SymbolType::RoomData: SaveRoomData(file, symbolInfo.second); break;
+            }
+        }
+
+        file.close();
+    }
+
+    return true;
+}
+
+bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
+{
+    std::ifstream file;
+
+    file.open(filePath);
+
+    if (file.bad())
+        return false;
+
+    std::string line;
+    while (file)
+    {
+        std::getline(file, line);
+
+        if (line.starts_with("const u8 "))
+        {
+            ParseGraphicsArray(file, filePath, line);
+        }
+        else if (line.starts_with("const struct RoomInfo"))
+        {
+            ParseRoomInfo(file, filePath, line);
+        }
+        else if (line.starts_with("const struct RoomSprite"))
+        {
+            ParseSpriteInfo(file, filePath, line);
+        }
+        else if (line.starts_with("static const u8") && line.contains("_Frame"))
+        {
+            ParseAnimation(file, filePath, line);
+        }
+    }
+
+    file.close();
+    return true;
+}
+
 bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
 {
     SymbolType type;
@@ -192,7 +260,7 @@ bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path&
     return true;
 }
 
-bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& path, std::string& line)
+bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
 {
     Animation animation;
     int32_t partCount;
@@ -260,6 +328,7 @@ bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& 
     }
 
     animations[symbolName] = animation;
+    fileAssociations[filePath.string()].emplace_back(SymbolType::Animation, symbolName);
 
     return true;
 }
@@ -357,38 +426,128 @@ Palette Parser::ParsePalette(const std::string& pal)
     return palette;
 }
 
-bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
+std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesystem::path& fileName, const SymbolInfo& symbol)
 {
-    std::ifstream file;
-
-    file.open(filePath);
-
-    if (file.bad())
-        return false;
-
     std::string line;
+    bool_t deleting = false;
+    bool_t singleLineDelete = false;
+
+    std::vector<std::string> lines;
+
     while (file)
     {
         std::getline(file, line);
 
-        if (line.starts_with("const u8 "))
+        if (symbol.first == SymbolType::Animation || symbol.first == SymbolType::Clipdata || symbol.first == SymbolType::SpriteData || symbol.first == SymbolType::RoomData)
         {
-            ParseGraphicsArray(file, filePath, line);
+            lines.push_back(line);
+            continue;
         }
-        else if (line.starts_with("const struct RoomInfo"))
+
+        if (line.contains(symbol.second))
         {
-            ParseRoomInfo(file, filePath, line);
+            deleting = true;
+            continue;
         }
-        else if (line.starts_with("const struct RoomSprite"))
+
+        if (deleting)
         {
-            ParseSpriteInfo(file, filePath, line);
+            if (line.contains("};"))
+            {
+                deleting = false;
+                // Also need to consume the empty line afterwards
+                singleLineDelete = true;
+            }
         }
-        else if (line.starts_with("static const u8") && line.contains("_Frame"))
+        else
         {
-            ParseAnimation(file, filePath, line);
+            if (singleLineDelete)
+                singleLineDelete = false;
+            else
+                lines.push_back(line);
         }
     }
 
+    std::fstream tempFile;
+    tempFile.open("temp.txt", std::fstream::out | std::fstream::ate);
+    for (size_t i = 0; i < lines.size() - 1; i++)
+        tempFile << lines[i] << '\n';
+
+    tempFile.close();
     file.close();
-    return true;
+
+    (void)remove(fileName.string().c_str());
+    (void)rename("temp.txt", fileName.string().c_str());
+
+    tempFile.open(fileName, std::ifstream::out | std::ifstream::in | std::ifstream::app);
+    return tempFile;
+}
+
+void Parser::SaveGraphics(std::fstream& file, const std::string& symbolName)
+{
+    file << "const u8 " << symbolName << "[] = {\n";
+
+    const Graphics& gfx = graphics[symbolName];
+    const size_t tileAmount = gfx.size() / 16;
+
+    file << '\t' << tileAmount << ",\n\n";
+
+    for (size_t i = 0; i < tileAmount; i++)
+    {
+        file << '\t';
+        for (size_t j = 0; j < 16; j++)
+        {
+            file << ToHex(gfx[i * 16 + j]) << ',';
+            file << (j == 15 ? '\n' : ' ');
+        }
+    }
+
+    file << "};\n\n";
+}
+
+void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
+{
+    file << "const u8 " << symbolName << "[] = {\n";
+
+    const Tilemap& tilemap = tilemaps[symbolName];
+
+    file << '\t' << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
+
+    for (const std::vector<uint8_t>& row : tilemap)
+    {
+        file << '\t';
+        for (size_t j = 0; j < row.size(); j++)
+        {
+            file << ToHex(row[j]) << ',';
+            if (j == row.size() - 1)
+                file << '\n';
+        }
+    }
+
+    file << "};\n\n";
+}
+
+void Parser::SaveClipdata(std::fstream& file, const std::string& symbolName)
+{
+}
+
+void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
+{
+}
+
+void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
+{
+}
+
+void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
+{
+}
+
+std::string Parser::ToHex(const size_t value)
+{
+    std::stringstream stream;
+
+    stream << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << value;
+
+    return stream.str();
 }

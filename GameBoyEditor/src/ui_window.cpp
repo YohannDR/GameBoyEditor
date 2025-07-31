@@ -1,12 +1,17 @@
 ﻿#include "ui_window.hpp"
 
-void UiWindow::ProcessUndoRedo()
+#include "parser.hpp"
+
+void UiWindow::ProcessShortcuts()
 {
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Z))
         m_ActionQueue.StepBack();
 
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Y))
         m_ActionQueue.StepForward();
+
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S))
+        Parser::Save();
 }
 
 void UiWindow::DrawMenuBar()

@@ -17,7 +17,7 @@ public:
     virtual void Update() = 0;
     virtual void OnProjectLoaded() {}
 
-    void ProcessUndoRedo();
+    void ProcessShortcuts();
     void DrawMenuBar();
 
     std::string name;

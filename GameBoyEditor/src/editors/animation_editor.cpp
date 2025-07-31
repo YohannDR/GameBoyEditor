@@ -174,7 +174,7 @@ void AnimationEditor::DrawPartInfo()
 
 void AnimationEditor::DrawGraphics()
 {
-    const std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
+    const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
 
     const size_t height = 1 + graphics.size() / 256;
     Ui::CreateSubWindow("graphics", ImGuiChildFlags_ResizeX, ImVec2(0, height * 8 * 4));
@@ -184,7 +184,7 @@ void AnimationEditor::DrawGraphics()
 
 void AnimationEditor::DrawOam() const
 {
-    const std::vector<uint8_t>& graphics = Parser::graphics[m_SelectedGraphics];
+    const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
     const Animation& animation = Parser::animations[m_SelectedAnimation];
 
     Ui::CreateSubWindow("oam", ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);

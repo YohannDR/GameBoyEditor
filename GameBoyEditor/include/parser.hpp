@@ -18,8 +18,11 @@ enum class SymbolType : uint8_t
     Tilemap,
     Clipdata,
     SpriteData,
+    Animation,
     RoomData
 };
+
+using SymbolInfo = std::pair<SymbolType, std::string>;
 
 class Parser
 {
@@ -27,6 +30,7 @@ class Parser
 
 public:
     static bool_t ParseProject();
+    static bool_t Save();
 
     static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
@@ -35,7 +39,7 @@ public:
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
     static inline std::unordered_map<std::string, Animation> animations;
 
-    static inline std::unordered_map<std::string, std::vector<std::pair<SymbolType, std::string>>> fileAssociations;
+    static inline std::unordered_map<std::string, std::vector<SymbolInfo>> fileAssociations;
 
     static inline std::vector<std::string> spriteIds;
     static inline std::vector<std::string> clipdataNames;
@@ -46,9 +50,20 @@ private:
     static bool_t ParseGraphicsArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseRoomInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseSpriteInfo(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
-    static bool_t ParseAnimation(std::ifstream& file, const std::filesystem::path& path, std::string& line);
+    static bool_t ParseAnimation(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
 
     static void ParseEnums();
 
     static Palette ParsePalette(const std::string& pal);
+
+    static std::fstream RemoveExistingSymbol(std::fstream& file, const std::filesystem::path& fileName, const SymbolInfo& symbol);
+
+    static void SaveGraphics(std::fstream& file, const std::string& symbolName);
+    static void SaveTilemap(std::fstream& file, const std::string& symbolName);
+    static void SaveClipdata(std::fstream& file, const std::string& symbolName);
+    static void SaveSpriteData(std::fstream& file, const std::string& symbolName);
+    static void SaveAnimation(std::fstream& file, const std::string& symbolName);
+    static void SaveRoomData(std::fstream& file, const std::string& symbolName);
+
+    static std::string ToHex(size_t value);
 };
