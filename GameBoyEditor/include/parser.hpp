@@ -40,6 +40,7 @@ public:
     static inline std::unordered_map<std::string, Animation> animations;
 
     static inline std::unordered_map<std::string, std::vector<SymbolInfo>> fileAssociations;
+    static inline std::vector<std::string> existingSymbols;
 
     static inline std::vector<std::string> spriteIds;
     static inline std::vector<std::string> clipdataNames;

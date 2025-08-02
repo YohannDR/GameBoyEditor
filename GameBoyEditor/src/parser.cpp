@@ -198,6 +198,7 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
     }
 
     fileAssociations[filePath.string()].emplace_back(type, symbolName);
+    existingSymbols.push_back(symbolName);
 
     return true;
 }
@@ -230,6 +231,7 @@ bool_t Parser::ParseRoomInfo(std::ifstream& file, const std::filesystem::path& f
     }
 
     fileAssociations[filePath.string()].emplace_back(SymbolType::RoomData, "sRooms");
+    existingSymbols.push_back("sRooms");
 
     return true;
 }
@@ -267,6 +269,7 @@ bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path&
     }
 
     fileAssociations[filePath.string()].emplace_back(SymbolType::SpriteData, symbolName);
+    existingSymbols.push_back(symbolName);
 
     return true;
 }
@@ -340,6 +343,7 @@ bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& 
 
     animations[symbolName] = animation;
     fileAssociations[filePath.string()].emplace_back(SymbolType::Animation, symbolName);
+    existingSymbols.push_back(symbolName);
 
     return true;
 }

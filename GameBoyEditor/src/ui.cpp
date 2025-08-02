@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "application.hpp"
+#include "editors/add_resource.hpp"
 #include "editors/animation_editor.hpp"
 #include "editors/edit_sprite_window.hpp"
 #include "editors/graphics_editor.hpp"
@@ -50,32 +51,26 @@ void Ui::MainMenuBar()
     if (ImGui::BeginMenu("Editors"))
     {
         if (ImGui::MenuItem("Graphics editor"))
-        {
             ShowWindow<GraphicsEditor>();
-        }
 
         if (ImGui::MenuItem("Animation editor"))
-        {
             ShowWindow<AnimationEditor>();
-        }
 
         ImGui::EndMenu();
     }
 
+    ImGui::BeginDisabled(!Application::IsProjectLoaded());
     if (ImGui::BeginMenu("Add"))
     {
         if (ImGui::MenuItem("Graphics"))
-        {
-            
-        }
+            ShowWindow<AddResource>()->Setup(SymbolType::Graphics);
 
-        if (ImGui::MenuItem("Room"))
-        {
-            
-        }
+        if (ImGui::MenuItem("Animation"))
+            ShowWindow<AddResource>()->Setup(SymbolType::Animation);
 
         ImGui::EndMenu();
     }
+    ImGui::EndDisabled();
 
     ImGui::EndMainMenuBar();
 
@@ -102,11 +97,15 @@ void Ui::DrawWindows()
         if (!w->open)
             continue;
 
-        if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr, ImGuiWindowFlags_MenuBar))
+        if (ImGui::Begin(w->name.c_str(), w->canBeClosed ? &w->open : nullptr, w->hasUndoRedo ? ImGuiWindowFlags_MenuBar : ImGuiWindowFlags_None))
         {
             w->Update();
-            w->ProcessShortcuts();
-            w->DrawMenuBar();
+
+            if (w->hasUndoRedo)
+            {
+                w->ProcessShortcuts();
+                w->DrawMenuBar();
+            }
         }
 
         ImGui::End();
@@ -320,6 +319,7 @@ void Ui::SetupWindow()
     m_Windows.push_back(new RoomEditor());
     m_Windows.push_back(new EditSpriteWindow());
     m_Windows.push_back(new AnimationEditor());
+    m_Windows.push_back(new AddResource());
 
     ShowWindow<RoomEditor>();
 }

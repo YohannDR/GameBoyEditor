@@ -22,6 +22,7 @@ public:
 
     std::string name;
     bool_t canBeClosed = true;
+    bool_t hasUndoRedo = true;
     bool_t open = false;
 
 protected:
