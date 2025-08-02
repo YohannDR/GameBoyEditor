@@ -200,10 +200,11 @@ void AnimationEditor::DrawOam() const
     {
         const ImVec2 position = ImVec2(middle.x + entry.x * m_OamPixelSize, middle.y + entry.y * m_OamPixelSize);
 
-        if (entry.tileIndex < graphics.size() / 16)
+        /*if (entry.tileIndex < graphics.size() / 16)
             Ui::DrawTile(position, graphics, entry.tileIndex, m_ColorPalette, m_OamPixelSize);
         else
             Ui::DrawCross(position, m_OamPixelSize);
+            */
     }
 
     const ImVec2 p1 = ImVec2(middle.x + animation[m_CurrentFrame].oam[m_CurrentPart].x * m_OamPixelSize, middle.y + animation[m_CurrentFrame].oam[m_CurrentPart].y * m_OamPixelSize);

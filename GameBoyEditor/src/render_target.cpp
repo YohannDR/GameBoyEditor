@@ -61,6 +61,11 @@ void RenderTarget::Render() const
     Unbind();
 }
 
+void RenderTarget::Draw() const
+{
+    ImGui::Image(m_Texture.GetId(), GetSize(), ImVec2(0, 1), ImVec2(1, 0));
+}
+
 const Texture& RenderTarget::GetTexture() const { return m_Texture; }
 
 ImVec2 RenderTarget::GetSize() const

@@ -15,6 +15,7 @@ public:
     void Bind() const;
     void Unbind() const;
     void Render() const;
+    void Draw() const;
 
     _NODISCARD const Texture& GetTexture() const;
     _NODISCARD ImVec2 GetSize() const;

@@ -7,6 +7,8 @@ out vec4 FragColor;
 uniform highp sampler2D graphics;
 uniform int gfxSize;
 
+uniform vec4 colors[4];
+
 void main()
 {
     const ivec2 pixelPosition = ivec2(gl_FragCoord.xy);
@@ -18,14 +20,6 @@ void main()
 
     const int subPixelX = 7 - pixelPosition.x % 8;
     const int subPixelY = pixelPosition.y % 8;
-
-    vec4 colors[5] = vec4[](
-        vec4(1, 1, 1, 1),
-        vec4(.75, .75, .75, 1),
-        vec4(.5, .5, .5, 1),
-        vec4(0, 0, 0, 1),
-        vec4(0, 0, 0, 0)
-    );
 
     const float offset = float(tileId * 8 + subPixelY) / float(gfxSize - 1);
     const vec2 data = texture(graphics, vec2(offset, 0)).rg;

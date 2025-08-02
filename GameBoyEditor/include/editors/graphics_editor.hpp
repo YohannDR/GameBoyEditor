@@ -23,9 +23,9 @@ private:
 
     size_t m_SelectedColor = 0;
     size_t m_SelectedTile = 0;
-    int32_t m_PixelSize = 25;
 
     PlotPixelAction* m_PlotPixelAction = nullptr;
 
     RenderTarget m_GraphicsRenderTarget;
+    RenderTarget m_TileRenderTarget;
 };

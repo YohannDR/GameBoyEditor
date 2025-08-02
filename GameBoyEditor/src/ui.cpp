@@ -184,32 +184,23 @@ void Ui::DrawPalette(Palette& palette, const float_t size, size_t* selectedColor
     }
 }
 
-void Ui::DrawTile(const ImVec2 position, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette, const float_t size)
+void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette)
 {
-    ImDrawList* const dl = ImGui::GetWindowDrawList();
+    const std::vector<uint8_t> tileData{graphics.begin() + graphicsIndex * 16, graphics.begin() + graphicsIndex * 16 + 16};
 
-    for (size_t i = 0; i < 8; i++)
-    {
-        const uint8_t plane0 = graphics[graphicsIndex * 16 + i * 2 + 0];
-        const uint8_t plane1 = graphics[graphicsIndex * 16 + i * 2 + 1];
+    m_GraphicsTexture.SetData(GL_RG8, GL_RG, 16, 1, tileData.data());
+    m_GraphicsTexture.BindToActive(0);
 
-        for (size_t j = 0; j < 8; j++)
-        {
-            const size_t bitIndex = 7 - j;
-            const size_t plane0Bit = (plane0 & 1 << bitIndex) >> bitIndex;
-            const size_t plane1Bit = (plane1 & 1 << bitIndex) >> bitIndex;
-            const size_t pixelIndex = plane0Bit | plane1Bit << 1;
+    m_GraphicsShader.Use();
+    m_GraphicsShader.SetUniform("graphics", 0);
+    m_GraphicsShader.SetUniform("gfxSize", static_cast<int32_t>(tileData.size()));
+    m_GraphicsShader.SetUniform("colors[0]", GetRgbColorVec(palette[0]));
+    m_GraphicsShader.SetUniform("colors[1]", GetRgbColorVec(palette[1]));
+    m_GraphicsShader.SetUniform("colors[2]", GetRgbColorVec(palette[2]));
+    m_GraphicsShader.SetUniform("colors[3]", GetRgbColorVec(palette[3]));
 
-            const uint32_t color = GetRgbColor(palette[pixelIndex]);
-
-            const ImVec2 pos = ImVec2(
-                position.x + static_cast<float_t>(j) * size,
-                position.y + static_cast<float_t>(i) * size
-            );
-
-            dl->AddRectFilled(pos, ImVec2(pos.x + size, pos.y + size), color);
-        }
-    }
+    renderTarget.Render();
+    renderTarget.Draw();
 }
 
 void Ui::DrawCross(const ImVec2 position, const float_t size)
@@ -224,7 +215,7 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
 {
     const size_t tileAmount = graphics.size() / 16;
 
-    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
+    const ImVec2 position = GetPosition();
 
     const int32_t tileCount = static_cast<int32_t>(graphics.size());
     m_GraphicsTexture.SetData(GL_RG8, GL_RG, tileCount, 1, graphics.data());
@@ -233,10 +224,13 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
     m_GraphicsShader.Use();
     m_GraphicsShader.SetUniform("graphics", 0);
     m_GraphicsShader.SetUniform("gfxSize", tileCount);
+    m_GraphicsShader.SetUniform("colors[0]", GetRgbColorVec(palette[0]));
+    m_GraphicsShader.SetUniform("colors[1]", GetRgbColorVec(palette[1]));
+    m_GraphicsShader.SetUniform("colors[2]", GetRgbColorVec(palette[2]));
+    m_GraphicsShader.SetUniform("colors[3]", GetRgbColorVec(palette[3]));
 
     renderTarget.Render();
-
-    ImGui::Image(renderTarget.GetTexture().GetId(), renderTarget.GetSize(), ImVec2(0, 1), ImVec2(1, 0));
+    renderTarget.Draw();
 
     const float_t pixelSize = renderTarget.scale;
     const float_t tileMax = static_cast<float_t>(tileAmount);
@@ -278,7 +272,7 @@ void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags, 
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, bgColor);
-    ImGui::BeginChild(name, size, ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
+    ImGui::BeginChild(name, size, ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 }
@@ -298,4 +292,12 @@ void Ui::SetupRenderer()
     m_GraphicsShader.Load("shaders/graphics.vert", "shaders/graphics.frag");
 
     m_GraphicsTexture.Create();
+}
+
+ImVec2 Ui::GetPosition()
+{
+    return ImVec2(
+        ImGui::GetWindowPos().x + ImGui::GetCursorPosX() - ImGui::GetScrollX(),
+        ImGui::GetWindowPos().y + ImGui::GetCursorPosY() - ImGui::GetScrollY()
+    );
 }

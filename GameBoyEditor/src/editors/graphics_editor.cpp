@@ -10,10 +10,11 @@
 #include "imgui/imgui_internal.h"
 
 GraphicsEditor::GraphicsEditor()
-    : m_GraphicsRenderTarget(16 * 8, 8)
+    : m_GraphicsRenderTarget(16 * 8, 8), m_TileRenderTarget(8, 8)
 {
     name = "Graphics editor";
     m_GraphicsRenderTarget.scale = 4;
+    m_TileRenderTarget.scale = 25;
 }
 
 void GraphicsEditor::Update()
@@ -42,7 +43,7 @@ void GraphicsEditor::DrawGraphicsSelector()
 
             const Graphics& gfx = Parser::graphics[s];
             const size_t tileMax = gfx.size() / 16;
-            m_GraphicsRenderTarget.SetSize(16 * 8, (1 + tileMax / 16) * 8);
+            m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
         }
     }
 
@@ -81,8 +82,7 @@ void GraphicsEditor::DrawGraphics()
     }
     ImGui::EndDisabled();
 
-    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
-
+    ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 16);
     Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, m_ColorPalette, &m_SelectedTile);
 
     ImGui::EndChild();
@@ -96,14 +96,14 @@ void GraphicsEditor::DrawCurrentTile()
     Ui::CreateSubWindow("tileWindow", ImGuiChildFlags_ResizeX);
 
     ImGui::SliderInt("Current tile", reinterpret_cast<int32_t*>(&m_SelectedTile), 0, static_cast<int32_t>(tileAmount - 1));
-    ImGui::SliderInt("Pixel size", &m_PixelSize, 25, 40);
+    ImGui::SliderFloat("Zoom", &m_TileRenderTarget.scale, 25, 40);
 
     m_SelectedTile = std::min(m_SelectedTile, tileAmount - 1);
 
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    Ui::DrawTile(position, graphics, m_SelectedTile, m_ColorPalette, static_cast<float_t>(m_PixelSize));
-    const size_t pixelIndex = Ui::DrawSelectSquare(position, ImVec2(8.f, 8.f), static_cast<float_t>(m_PixelSize));
+    Ui::DrawTile(m_TileRenderTarget, graphics, m_SelectedTile, m_ColorPalette);
+    const size_t pixelIndex = Ui::DrawSelectSquare(position, ImVec2(8.f, 8.f), m_TileRenderTarget.scale);
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && pixelIndex != std::numeric_limits<size_t>::max())
     {

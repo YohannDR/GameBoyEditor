@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "imgui/imgui.h"
+
 class Shader
 {
 public:
@@ -9,6 +11,7 @@ public:
     void Use() const;
 
     void SetUniform(const std::string& name, int32_t value) const;
+    void SetUniform(const std::string& name, const ImVec4& value);
 
 private:
     static void CheckCompileErrors(uint32_t shader, const std::string& type);

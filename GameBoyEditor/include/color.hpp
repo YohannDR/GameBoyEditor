@@ -29,6 +29,20 @@ constexpr uint32_t GetRgbColor(const Color c)
     return IM_COL32(0x00, 0x00, 0x00, 0xFF);
 }
 
+constexpr ImVec4 GetRgbColorVec(const Color c)
+{
+    switch (c)
+    {
+        case White: return ImVec4(1, 1, 1, 1);
+        case LightGrey: return ImVec4(.75, .75, .75, 1);
+        case DarkGrey: return ImVec4(.5, .5, .5, 1);
+        case Black: return ImVec4(0, 0, 0, 1);
+        case Transparent: return ImVec4(0, 0, 0, 0);
+    }
+
+    return ImVec4(0, 0, 0, 1);
+}
+
 inline Color GetColorFromString(const std::string& color)
 {
     if (color == "COLOR_WHITE")
