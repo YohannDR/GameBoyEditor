@@ -11,14 +11,12 @@
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
 
+#include "glad/glad.h"
+
 void Ui::Init()
 {
-    m_Windows.push_back(new GraphicsEditor());
-    m_Windows.push_back(new RoomEditor());
-    m_Windows.push_back(new EditSpriteWindow());
-    m_Windows.push_back(new AnimationEditor());
-
-    ShowWindow<RoomEditor>();
+    SetupWindow();
+    SetupRenderer();
 }
 
 void Ui::MainMenuBar()
@@ -222,21 +220,25 @@ void Ui::DrawCross(const ImVec2 position, const float_t size)
     dl->AddLine(ImVec2(position.x + size * 8, position.y), ImVec2(position.x, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 }
 
-void Ui::DrawGraphics(const ImVec2 position, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
+void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
 {
     const size_t tileAmount = graphics.size() / 16;
 
-    constexpr float_t pixelSize = 4;
-    for (size_t i = 0; i < tileAmount; i++)
-    {
-        const ImVec2 tilePosition = ImVec2(
-            position.x + static_cast<float_t>(i % 16) * 8 * pixelSize,
-            position.y + static_cast<float_t>(i / 16) * 8 * pixelSize  // NOLINT(bugprone-integer-division)
-        );
+    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-        DrawTile(tilePosition, graphics, i, palette, pixelSize);
-    }
+    const int32_t tileCount = static_cast<int32_t>(graphics.size());
+    m_GraphicsTexture.SetData(GL_RG8, GL_RG, tileCount, 1, graphics.data());
+    m_GraphicsTexture.BindToActive(0);
 
+    m_GraphicsShader.Use();
+    m_GraphicsShader.SetUniform("graphics", 0);
+    m_GraphicsShader.SetUniform("gfxSize", tileCount);
+
+    renderTarget.Render();
+
+    ImGui::Image(renderTarget.GetTexture().GetId(), renderTarget.GetSize(), ImVec2(0, 1), ImVec2(1, 0));
+
+    const float_t pixelSize = renderTarget.scale;
     const float_t tileMax = static_cast<float_t>(tileAmount);
     const size_t index = DrawSelectSquare(position, ImVec2(tileMax >= 16 ? 16 : tileMax, 1 + tileMax / 16), pixelSize * 8);
 
@@ -279,4 +281,21 @@ void Ui::CreateSubWindow(const char_t* const name, const ImGuiChildFlags flags, 
     ImGui::BeginChild(name, size, ImGuiChildFlags_Borders | flags, ImGuiWindowFlags_NoMove);
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
+}
+
+void Ui::SetupWindow()
+{
+    m_Windows.push_back(new GraphicsEditor());
+    m_Windows.push_back(new RoomEditor());
+    m_Windows.push_back(new EditSpriteWindow());
+    m_Windows.push_back(new AnimationEditor());
+
+    ShowWindow<RoomEditor>();
+}
+
+void Ui::SetupRenderer()
+{
+    m_GraphicsShader.Load("shaders/graphics.vert", "shaders/graphics.frag");
+
+    m_GraphicsTexture.Create();
 }

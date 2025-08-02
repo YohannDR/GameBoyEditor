@@ -105,7 +105,7 @@ void RoomEditor::DrawTileset()
     const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    Ui::DrawGraphics(position, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+    // Ui::DrawGraphics(position, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
 

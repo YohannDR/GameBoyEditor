@@ -1,13 +1,14 @@
 ﻿#pragma once
 
 #include "color.hpp"
+#include "render_target.hpp"
 #include "ui_window.hpp"
 #include "actions/plot_pixel_action.hpp"
 
 class GraphicsEditor : public UiWindow
 {
 public:
-    explicit GraphicsEditor() { name = "Graphics editor"; }
+    explicit GraphicsEditor();
 
     void Update() override;
 
@@ -25,4 +26,6 @@ private:
     int32_t m_PixelSize = 25;
 
     PlotPixelAction* m_PlotPixelAction = nullptr;
+
+    RenderTarget m_GraphicsRenderTarget;
 };

@@ -9,6 +9,13 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
+GraphicsEditor::GraphicsEditor()
+    : m_GraphicsRenderTarget(16 * 8, 8)
+{
+    name = "Graphics editor";
+    m_GraphicsRenderTarget.scale = 4;
+}
+
 void GraphicsEditor::Update()
 {
     DrawGraphicsSelector();
@@ -32,6 +39,10 @@ void GraphicsEditor::DrawGraphicsSelector()
         if (ImGui::MenuItem(s.c_str()))
         {
             m_SelectedGraphics = s;
+
+            const Graphics& gfx = Parser::graphics[s];
+            const size_t tileMax = gfx.size() / 16;
+            m_GraphicsRenderTarget.SetSize(16 * 8, (1 + tileMax / 16) * 8);
         }
     }
 
@@ -72,7 +83,7 @@ void GraphicsEditor::DrawGraphics()
 
     const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    Ui::DrawGraphics(position, graphics, m_ColorPalette, &m_SelectedTile);
+    Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, m_ColorPalette, &m_SelectedTile);
 
     ImGui::EndChild();
 }

@@ -26,7 +26,7 @@ constexpr uint32_t GetRgbColor(const Color c)
         case Transparent: return IM_COL32(0x00, 0x00, 0x00, 0x00);
     }
 
-    return 0x000000FF;
+    return IM_COL32(0x00, 0x00, 0x00, 0xFF);
 }
 
 inline Color GetColorFromString(const std::string& color)

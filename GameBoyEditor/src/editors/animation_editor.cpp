@@ -178,7 +178,7 @@ void AnimationEditor::DrawGraphics()
 
     const size_t height = 1 + graphics.size() / 256;
     Ui::CreateSubWindow("graphics", ImGuiChildFlags_ResizeX, ImVec2(0, height * 8 * 4));
-    Ui::DrawGraphics(ImGui::GetWindowPos(), graphics, m_ColorPalette, &m_SelectedTile);
+    // Ui::DrawGraphics(ImGui::GetWindowPos(), graphics, m_ColorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
 
