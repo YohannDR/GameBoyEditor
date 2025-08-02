@@ -232,7 +232,7 @@ void AnimationEditor::DrawOam()
         if (entry.tileIndex < graphics.size() / 16)
         {
             ImGui::SetCursorPos(ImVec2(middle.x + position.x, middle.y + position.y));
-            Ui::DrawTile(m_SpriteRenderTargets[i], graphics, entry.tileIndex, m_ColorPalette);
+            Ui::DrawTile(m_SpriteRenderTargets[i], graphics, entry.tileIndex, m_ColorPalette, entry.properties & 1u << 5, entry.properties & 1u << 6);
 
             if (ImGui::IsItemClicked())
                 m_SelectedPart = i;

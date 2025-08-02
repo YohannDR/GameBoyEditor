@@ -60,14 +60,19 @@ void Shader::Use() const
     glUseProgram(m_Handle);
 }
 
-void Shader::SetUniform(const std::string& name, const int32_t value) const
+void Shader::SetUniform(const std::string& name, const bool_t value) const
 {
-    glUniform1i(glGetUniformLocation(m_Handle, name.c_str()), value); 
+    glUniform1i(glGetUniformLocation(m_Handle, name.c_str()), value);
 }
 
-void Shader::SetUniform(const std::string& name, const ImVec4& value)
+void Shader::SetUniform(const std::string& name, const int32_t value) const
 {
-    glUniform4fv(glGetUniformLocation(m_Handle, name.c_str()), 1, &value.x); 
+    glUniform1i(glGetUniformLocation(m_Handle, name.c_str()), value);
+}
+
+void Shader::SetUniform(const std::string& name, const ImVec4& value) const
+{
+    glUniform4fv(glGetUniformLocation(m_Handle, name.c_str()), 1, &value.x);
 }
 
 void Shader::CheckCompileErrors(const uint32_t shader, const std::string& type)

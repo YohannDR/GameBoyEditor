@@ -8,6 +8,8 @@ uniform highp sampler2D graphics;
 uniform int gfxSize;
 
 uniform vec4 colors[4];
+uniform int xFlip;
+uniform int yFlip;
 
 void main()
 {
@@ -16,10 +18,19 @@ void main()
     const int tileId = pixelPosition.x / 8 + (pixelPosition.y / 8) * 16;
 
     if (tileId >= gfxSize / 16)
-    discard;
+        discard;
 
-    const int subPixelX = 7 - pixelPosition.x % 8;
-    const int subPixelY = pixelPosition.y % 8;
+    int subPixelX;
+    if (xFlip != 0)
+        subPixelX = pixelPosition.x % 8;
+    else
+        subPixelX = 7 - pixelPosition.x % 8;
+
+    int subPixelY;
+    if (yFlip != 0)
+        subPixelY = 7 - pixelPosition.y % 8;
+    else
+        subPixelY = pixelPosition.y % 8;
 
     const float offset = float(tileId * 8 + subPixelY) / float(gfxSize - 1);
     const vec2 data = texture(graphics, vec2(offset, 0)).rg;

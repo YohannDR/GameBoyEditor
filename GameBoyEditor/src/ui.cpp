@@ -184,7 +184,7 @@ void Ui::DrawPalette(Palette& palette, const float_t size, size_t* selectedColor
     }
 }
 
-void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette)
+void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette, const bool_t xFlip, const bool_t yFlip)
 {
     const Graphics::difference_type tileId = static_cast<Graphics::difference_type>(graphicsIndex) * 16;
     const Graphics tileData{graphics.begin() + tileId, graphics.begin() + tileId + 16};
@@ -199,6 +199,8 @@ void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& 
     m_GraphicsShader.SetUniform("colors[1]", GetRgbColorVec(palette[1]));
     m_GraphicsShader.SetUniform("colors[2]", GetRgbColorVec(palette[2]));
     m_GraphicsShader.SetUniform("colors[3]", GetRgbColorVec(palette[3]));
+    m_GraphicsShader.SetUniform("xFlip", xFlip);
+    m_GraphicsShader.SetUniform("yFlip", yFlip);
 
     renderTarget.Render();
     renderTarget.Draw();
@@ -229,6 +231,8 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
     m_GraphicsShader.SetUniform("colors[1]", GetRgbColorVec(palette[1]));
     m_GraphicsShader.SetUniform("colors[2]", GetRgbColorVec(palette[2]));
     m_GraphicsShader.SetUniform("colors[3]", GetRgbColorVec(palette[3]));
+    m_GraphicsShader.SetUniform("xFLip", false);
+    m_GraphicsShader.SetUniform("yFLip", false);
 
     renderTarget.Render();
     renderTarget.Draw();
