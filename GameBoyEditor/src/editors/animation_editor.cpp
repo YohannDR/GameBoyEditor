@@ -1,10 +1,25 @@
 ﻿#include "editors/animation_editor.hpp"
 
 #include <functional>
+#include <iostream>
 #include <ranges>
 
 #include "parser.hpp"
 #include "ui.hpp"
+
+AnimationEditor::AnimationEditor()
+{
+    name = "Animation editor";
+
+    for (RenderTarget& renderTarget : m_SpriteRenderTargets)
+    {
+        renderTarget.Create(8, 8);
+        renderTarget.scale = 5.f;
+    }
+
+    m_GraphicsRenderTarget.Create(8 * 16, 8);
+    m_GraphicsRenderTarget.scale = 4;
+}
 
 void AnimationEditor::Update()
 {
@@ -61,7 +76,13 @@ void AnimationEditor::DrawGraphicsSelector()
     for (const std::string& s : Parser::graphics | std::ranges::views::keys)
     {
         if (ImGui::MenuItem(s.c_str()))
+        {
             m_SelectedGraphics = s;
+            
+            const Graphics& gfx = Parser::graphics[s];
+            const size_t tileMax = gfx.size() / 16;
+            m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
+        }
     }
 
     ImGui::EndCombo();
@@ -72,13 +93,16 @@ void AnimationEditor::DrawPlaybackControls()
     ImGui::SeparatorText("Controls");
 
     ImGui::SliderFloat("Zoom", &m_OamPixelSize, 5.f, 15.f);
+    for (RenderTarget& renderTarget : m_SpriteRenderTargets)
+        renderTarget.scale = m_OamPixelSize;
+    
     ImGui::Checkbox("Draw origin", &m_DrawOrigin);
 
     if (ImGui::Button(m_Playing ? "Stop" : "Play"))
     {
         m_AnimationTimer = 0;
         m_CurrentFrame = 0;
-        m_CurrentPart = 0;
+        m_SelectedPart = 0;
         m_Playing ^= true;
     }
 }
@@ -126,26 +150,28 @@ void AnimationEditor::DrawPartInfo()
     Animation& animation = Parser::animations[m_SelectedAnimation];
     std::vector<OamEntry>& entries = animation[m_CurrentFrame].oam;
 
+    ImGui::BeginDisabled(entries.size() == 10);
     if (ImGui::Button("+"))
-        entries.insert(entries.begin() + m_CurrentPart, OamEntry{});
+        entries.insert(entries.begin() + m_SelectedPart, OamEntry{});
+    ImGui::EndDisabled();
 
     ImGui::SameLine();
     ImGui::BeginDisabled(entries.size() == 1);
     if (ImGui::Button("-"))
     {
-        entries.erase(entries.begin() + m_CurrentPart);
+        entries.erase(entries.begin() + m_SelectedPart);
 
-        if (m_CurrentPart == entries.size())
-            m_CurrentPart--;
+        if (m_SelectedPart == entries.size())
+            m_SelectedPart--;
     }
     ImGui::EndDisabled();
 
     const uint8_t nbrParts = static_cast<uint8_t>(entries.size());
 
     const uint8_t partMax = nbrParts - 1;
-    ImGui::SliderScalar("Current part", ImGuiDataType_U8, &m_CurrentPart, &zero, &partMax);
+    ImGui::SliderScalar("Current part", ImGuiDataType_U8, &m_SelectedPart, &zero, &partMax);
     
-    OamEntry& entry = entries[m_CurrentPart];
+    OamEntry& entry = entries[m_SelectedPart];
 
     ImGui::DragScalar("Y", ImGuiDataType_S8, &entry.y);
     ImGui::DragScalar("X", ImGuiDataType_S8, &entry.x);
@@ -176,42 +202,52 @@ void AnimationEditor::DrawGraphics()
 {
     const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
 
-    const size_t height = 1 + graphics.size() / 256;
-    Ui::CreateSubWindow("graphics", ImGuiChildFlags_ResizeX, ImVec2(0, height * 8 * 4));
-    // Ui::DrawGraphics(ImGui::GetWindowPos(), graphics, m_ColorPalette, &m_SelectedTile);
+    Ui::CreateSubWindow("graphics", ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
+    ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 16);
+    Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, m_ColorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
 
-void AnimationEditor::DrawOam() const
+void AnimationEditor::DrawOam()
 {
     const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
     const Animation& animation = Parser::animations[m_SelectedAnimation];
 
     Ui::CreateSubWindow("oam", ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY);
 
-    const ImVec2 size = ImGui::GetWindowSize();
+    const ImVec2 size = ImGui::GetContentRegionAvail();
     const ImVec2 pos = ImGui::GetWindowPos();
-    const ImVec2 middle = ImVec2(pos.x + size.x / 2 - ImGui::GetScrollX(), pos.y + size.y / 2 - ImGui::GetScrollY());
+    const ImVec2 middleAbs = ImVec2(pos.x + size.x / 2 - ImGui::GetScrollX(), pos.y + size.y / 2 - ImGui::GetScrollY());
+    const ImVec2 middle = ImVec2(size.x / 2, size.y / 2);
 
     if (m_DrawOrigin)
-        Ui::DrawCross(ImVec2(middle.x - 4, middle.y - 4), 2);
+        Ui::DrawCross(ImVec2(middleAbs.x - 4, middleAbs.y - 4), 2);
 
-    for (const OamEntry& entry : animation[m_CurrentFrame].oam)
+    for (size_t i = 0; i < animation[m_CurrentFrame].oam.size(); i++)
     {
-        const ImVec2 position = ImVec2(middle.x + entry.x * m_OamPixelSize, middle.y + entry.y * m_OamPixelSize);
+        ImGui::PushID(&i + i);
+        const OamEntry& entry = animation[m_CurrentFrame].oam[i];
+        const ImVec2 position = ImVec2(entry.x * m_OamPixelSize, entry.y * m_OamPixelSize);
 
-        /*if (entry.tileIndex < graphics.size() / 16)
-            Ui::DrawTile(position, graphics, entry.tileIndex, m_ColorPalette, m_OamPixelSize);
+        if (entry.tileIndex < graphics.size() / 16)
+        {
+            ImGui::SetCursorPos(ImVec2(middle.x + position.x, middle.y + position.y));
+            Ui::DrawTile(m_SpriteRenderTargets[i], graphics, entry.tileIndex, m_ColorPalette);
+
+            if (ImGui::IsItemClicked())
+                m_SelectedPart = i;
+        }
         else
-            Ui::DrawCross(position, m_OamPixelSize);
-            */
+        {
+            Ui::DrawCross(ImVec2(middleAbs.x + position.x, middleAbs.y + position.y), m_OamPixelSize);
+        }
+        ImGui::PopID();
     }
 
-    const ImVec2 p1 = ImVec2(middle.x + animation[m_CurrentFrame].oam[m_CurrentPart].x * m_OamPixelSize, middle.y + animation[m_CurrentFrame].oam[m_CurrentPart].y * m_OamPixelSize);
+    const ImVec2 p1 = ImVec2(middleAbs.x + animation[m_CurrentFrame].oam[m_SelectedPart].x * m_OamPixelSize, middleAbs.y + animation[m_CurrentFrame].oam[m_SelectedPart].y * m_OamPixelSize);
     const ImVec2 p2 = ImVec2(p1.x + 8 * m_OamPixelSize, p1.y + 8 * m_OamPixelSize);
     ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 
-    ImGui::Dummy(ImVec2(160 * m_OamPixelSize, 144 * m_OamPixelSize));
     ImGui::EndChild();
 }
 

@@ -9,7 +9,7 @@
 class RenderTarget
 {
 public:
-    explicit RenderTarget(int32_t width, int32_t height);
+    void Create(int32_t width, int32_t height);
 
     void SetSize(int32_t width, int32_t height);
     void Bind() const;
@@ -26,11 +26,11 @@ private:
     void CreateQuad();
 
     Texture m_Texture;
-    uint32_t m_Fbo;
+    uint32_t m_Fbo = 0;
 
-    uint32_t m_Vao;
-    uint32_t m_Vbo;
+    uint32_t m_Vao = 0;
+    uint32_t m_Vbo = 0;
 
-    int32_t m_Width;
-    int32_t m_Height;
+    int32_t m_Width = 0;
+    int32_t m_Height = 0;
 };

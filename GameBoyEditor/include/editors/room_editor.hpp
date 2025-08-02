@@ -1,13 +1,14 @@
 ﻿#pragma once
 
 #include "parser.hpp"
+#include "render_target.hpp"
 #include "ui_window.hpp"
 #include "actions/edit_tilemap_action.hpp"
 
 class RoomEditor : public UiWindow
 {
 public:
-    explicit RoomEditor() { name = "Room editor"; canBeClosed = false; }
+    explicit RoomEditor();
 
     void Update() override;
     void OnProjectLoaded() override;
@@ -48,6 +49,8 @@ private:
     size_t m_BackupCursorY = 0;
 
     EditTilemapAction* m_EditTilemapAction = nullptr;
+
+    RenderTarget m_GraphicsRenderTarget;
 
     static constexpr float_t PixelSize = 4;
 };

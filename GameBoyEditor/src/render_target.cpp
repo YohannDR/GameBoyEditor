@@ -1,12 +1,10 @@
 ﻿#include "render_target.hpp"
 
-#include <array>
 #include <functional>
-#include <iostream>
 
 #include "glad/glad.h"
 
-RenderTarget::RenderTarget(const int32_t width, const int32_t height)
+void RenderTarget::Create(const int32_t width, const int32_t height)
 {
     m_Width = width;
     m_Height = height;

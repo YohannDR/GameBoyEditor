@@ -9,6 +9,15 @@
 #include "ui.hpp"
 #include "editors/edit_sprite_window.hpp"
 
+RoomEditor::RoomEditor()
+{
+    name = "Room editor";
+    canBeClosed = false;
+
+    m_GraphicsRenderTarget.Create(16 * 8, 8);
+    m_GraphicsRenderTarget.scale = 4;
+}
+
 void RoomEditor::Update()
 {
     if (!Application::IsProjectLoaded())
@@ -96,16 +105,21 @@ void RoomEditor::DrawTileset()
         for (const std::string& s : Parser::graphics | std::ranges::views::keys)
         {
             if (ImGui::MenuItem(s.c_str()))
+            {
                 Parser::rooms[m_RoomId].graphics = s;
+
+                const Graphics& gfx = Parser::graphics[s];
+                const size_t tileMax = gfx.size() / 16;
+                m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
+            }
         }
         
         ImGui::EndCombo();
     }
 
     const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
-    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + ImGui::GetCursorPosY());
 
-    // Ui::DrawGraphics(position, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+    Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
 
@@ -277,6 +291,10 @@ void RoomEditor::LoadRoom()
 
     m_Height = static_cast<uint8_t>(tilemap.size());
     m_Width = static_cast<uint8_t>(tilemap[0].size());
+
+    const Graphics& gfx = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    const size_t tileMax = gfx.size() / 16;
+    m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
 }
 
 void RoomEditor::ResizeRoom() const

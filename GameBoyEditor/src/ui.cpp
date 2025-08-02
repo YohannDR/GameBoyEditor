@@ -171,7 +171,7 @@ void Ui::DrawPalette(Palette& palette, const float_t size, size_t* selectedColor
         ImGui::PopID();
     }
 
-    if (selectedColor)
+    if (selectedColor && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
     {
         if (ImGui::IsKeyPressed(ImGuiKey_A))
             *selectedColor = 0;
@@ -186,7 +186,8 @@ void Ui::DrawPalette(Palette& palette, const float_t size, size_t* selectedColor
 
 void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const size_t graphicsIndex, const Palette& palette)
 {
-    const std::vector<uint8_t> tileData{graphics.begin() + graphicsIndex * 16, graphics.begin() + graphicsIndex * 16 + 16};
+    const Graphics::difference_type tileId = static_cast<Graphics::difference_type>(graphicsIndex) * 16;
+    const Graphics tileData{graphics.begin() + tileId, graphics.begin() + tileId + 16};
 
     m_GraphicsTexture.SetData(GL_RG8, GL_RG, 16, 1, tileData.data());
     m_GraphicsTexture.BindToActive(0);
@@ -240,6 +241,7 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
         position.x + static_cast<float_t>(*selectedTile % 16) * pixelSize * 8,
         position.y + static_cast<float_t>(*selectedTile / 16) * pixelSize * 8  // NOLINT(bugprone-integer-division)
     );
+
     ImGui::GetWindowDrawList()->AddRect(selectPos, ImVec2(selectPos.x + pixelSize * 8, selectPos.y + pixelSize * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)

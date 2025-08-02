@@ -10,9 +10,12 @@
 #include "imgui/imgui_internal.h"
 
 GraphicsEditor::GraphicsEditor()
-    : m_GraphicsRenderTarget(16 * 8, 8), m_TileRenderTarget(8, 8)
 {
     name = "Graphics editor";
+
+    m_GraphicsRenderTarget.Create(16 * 8, 8);
+    m_TileRenderTarget.Create(8, 8);
+
     m_GraphicsRenderTarget.scale = 4;
     m_TileRenderTarget.scale = 25;
 }
