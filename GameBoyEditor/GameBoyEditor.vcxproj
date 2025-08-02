@@ -87,6 +87,7 @@
     <Content Include="externals\libs\glfw3.lib" />
     <Content Include="shaders\graphics.frag" />
     <Content Include="shaders\graphics.vert" />
+    <Content Include="shaders\tilemap.frag" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

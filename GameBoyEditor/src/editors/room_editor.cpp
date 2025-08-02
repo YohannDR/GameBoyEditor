@@ -16,6 +16,9 @@ RoomEditor::RoomEditor()
 
     m_GraphicsRenderTarget.Create(16 * 8, 8);
     m_GraphicsRenderTarget.scale = 4;
+
+    m_TilemapRenderTarget.Create(8, 8);
+    m_TilemapRenderTarget.scale = 4;
 }
 
 void RoomEditor::Update()
@@ -61,8 +64,8 @@ void RoomEditor::DrawRoomId()
             const std::string id = std::to_string(i);
             if (ImGui::Selectable(id.c_str(), i == m_RoomId))
             {
-                LoadRoom();
                 m_RoomId = i;
+                LoadRoom();
             }
         }
 
@@ -119,6 +122,7 @@ void RoomEditor::DrawTileset()
 
     const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
 
+    ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 20);
     Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
     ImGui::EndChild();
 }
@@ -135,36 +139,19 @@ void RoomEditor::DrawRoom()
     Ui::CreateSubWindow("room", ImGuiChildFlags_ResizeX);
 
     ImGui::Text("Tilemap : %s", Parser::rooms[m_RoomId].tilemap.c_str());
+    ImGui::SliderFloat("Zoom", &m_TilemapRenderTarget.scale, 4, 20);
 
-    const ImVec2 position = ImVec2(ImGui::GetWindowPos().x - ImGui::GetScrollX(), ImGui::GetWindowPos().y + ImGui::GetCursorPosY() - ImGui::GetScrollY());
+    const ImVec2 position = Ui::GetPosition();
 
-    for (size_t i = 0; i < height; i++)
-    {
-        for (size_t j = 0; j < width; j++)
-        {
-            const ImVec2 tilePosition = ImVec2(
-                position.x + static_cast<float_t>(j) * 8 * PixelSize,
-                position.y + static_cast<float_t>(i) * 8 * PixelSize
-            );
+    Ui::DrawTilemap(m_TilemapRenderTarget, graphics, tilemap, palette);
 
-            const uint8_t tileId = tilemap[i][j];
-            /*if (tileId < graphics.size() / 16)
-                Ui::DrawTile(tilePosition, graphics, tileId, palette, PixelSize);
-            else
-                Ui::DrawCross(tilePosition, PixelSize);
-            */
-        }
-    }
-
-    ImGui::Dummy(ImVec2(static_cast<float_t>(width) * PixelSize * 8, static_cast<float_t>(height) * PixelSize * 8));
-
-    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), PixelSize * 8);
+    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), m_TilemapRenderTarget.scale * 8);
     const bool_t inBounds = index != std::numeric_limits<size_t>::max();
 
     const size_t x = index % width;
     const size_t y = index / width;
 
-    if (m_EditingMode == EditingMode::Tile && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds)
+    if (m_EditingMode == EditingMode::Tile && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds && ImGui::IsItemHovered())
     {
         if (!m_EditTilemapAction)
             m_EditTilemapAction = new EditTilemapAction(&tilemap);
@@ -227,10 +214,10 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
         }
 
         const ImVec2 p1 = ImVec2(
-            position.x + static_cast<float_t>(sprite.x) * PixelSize * 8,
-            position.y + static_cast<float_t>(sprite.y - 1) * PixelSize * 8
+            position.x + static_cast<float_t>(sprite.x) * m_TilemapRenderTarget.scale * 8,
+            position.y + static_cast<float_t>(sprite.y - 1) * m_TilemapRenderTarget.scale * 8
         );
-        const ImVec2 p2 = ImVec2(p1.x + PixelSize * 8, p1.y + PixelSize * 8);
+        const ImVec2 p2 = ImVec2(p1.x + m_TilemapRenderTarget.scale * 8, p1.y + m_TilemapRenderTarget.scale * 8);
 
         dl->AddRect(p1, p2, IM_COL32(0x00, 0xFF, 0x00, 0xFF), 0, 0, 4);
     }
@@ -291,6 +278,7 @@ void RoomEditor::LoadRoom()
 
     m_Height = static_cast<uint8_t>(tilemap.size());
     m_Width = static_cast<uint8_t>(tilemap[0].size());
+    m_TilemapRenderTarget.SetSize(m_Width * 8, m_Height * 8);
 
     const Graphics& gfx = Parser::graphics[Parser::rooms[m_RoomId].graphics];
     const size_t tileMax = gfx.size() / 16;

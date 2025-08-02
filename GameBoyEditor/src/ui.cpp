@@ -206,14 +206,6 @@ void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& 
     renderTarget.Draw();
 }
 
-void Ui::DrawCross(const ImVec2 position, const float_t size)
-{
-    ImDrawList* const dl = ImGui::GetWindowDrawList();
-
-    dl->AddLine(position, ImVec2(position.x + size * 8, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
-    dl->AddLine(ImVec2(position.x + size * 8, position.y), ImVec2(position.x, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
-}
-
 void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
 {
     const size_t tileAmount = graphics.size() / 16;
@@ -250,6 +242,45 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
         *selectedTile = index;
+}
+
+void Ui::DrawTilemap(const RenderTarget& renderTarget, const Graphics& graphics, const Tilemap& tilemap, const Palette& palette)
+{
+    const int32_t tileCount = static_cast<int32_t>(graphics.size());
+    m_GraphicsTexture.SetData(GL_RG8, GL_RG, tileCount, 1, graphics.data());
+
+    std::vector<uint8_t> compactTilemap;
+    for (const std::vector<uint8_t>& i : tilemap)
+        compactTilemap.append_range(i);
+
+    const int32_t tilemapWidth = static_cast<int32_t>(tilemap[0].size());
+    const int32_t tilemapSize = static_cast<int32_t>(tilemap.size()) * tilemapWidth;
+    m_TilemapTexture.SetData(GL_R8, GL_RED, tilemapSize, 1, compactTilemap.data());
+
+    m_GraphicsTexture.BindToActive(0);
+    m_TilemapTexture.BindToActive(1);
+
+    m_TilemapShader.Use();
+    m_TilemapShader.SetUniform("graphics", 0);
+    m_TilemapShader.SetUniform("tilemap", 1);
+    m_TilemapShader.SetUniform("gfxSize", tileCount);
+    m_TilemapShader.SetUniform("tilemapSize", tilemapSize);
+    m_TilemapShader.SetUniform("tilemapWidth", tilemapWidth);
+    m_TilemapShader.SetUniform("colors[0]", GetRgbColorVec(palette[0]));
+    m_TilemapShader.SetUniform("colors[1]", GetRgbColorVec(palette[1]));
+    m_TilemapShader.SetUniform("colors[2]", GetRgbColorVec(palette[2]));
+    m_TilemapShader.SetUniform("colors[3]", GetRgbColorVec(palette[3]));
+
+    renderTarget.Render();
+    renderTarget.Draw();
+}
+
+void Ui::DrawCross(const ImVec2 position, const float_t size)
+{
+    ImDrawList* const dl = ImGui::GetWindowDrawList();
+
+    dl->AddLine(position, ImVec2(position.x + size * 8, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+    dl->AddLine(ImVec2(position.x + size * 8, position.y), ImVec2(position.x, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 }
 
 size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const float_t squareSize)
@@ -295,9 +326,11 @@ void Ui::SetupWindow()
 
 void Ui::SetupRenderer()
 {
+    m_TilemapShader.Load("shaders/graphics.vert", "shaders/tilemap.frag");
     m_GraphicsShader.Load("shaders/graphics.vert", "shaders/graphics.frag");
 
     m_GraphicsTexture.Create();
+    m_TilemapTexture.Create();
 }
 
 ImVec2 Ui::GetPosition()

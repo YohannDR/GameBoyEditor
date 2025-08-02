@@ -51,6 +51,5 @@ private:
     EditTilemapAction* m_EditTilemapAction = nullptr;
 
     RenderTarget m_GraphicsRenderTarget;
-
-    static constexpr float_t PixelSize = 4;
+    RenderTarget m_TilemapRenderTarget;
 };
