@@ -68,6 +68,9 @@ void Ui::MainMenuBar()
         if (ImGui::MenuItem("Animation"))
             ShowWindow<AddResource>()->Setup(SymbolType::Animation);
 
+        if (ImGui::MenuItem("Room"))
+            ShowWindow<AddResource>()->Setup(SymbolType::RoomData);
+
         ImGui::EndMenu();
     }
     ImGui::EndDisabled();

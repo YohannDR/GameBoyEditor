@@ -32,6 +32,8 @@ public:
     static bool_t ParseProject();
     static bool_t Save();
 
+    static void RegisterSymbol(const std::string& file, const std::string& symbolName, SymbolType type);
+
     static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
     static inline std::unordered_map<std::string, Tilemap> clipdata;

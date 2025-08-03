@@ -285,7 +285,7 @@ void RoomEditor::LoadRoom()
     m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
 }
 
-void RoomEditor::ResizeRoom() const
+void RoomEditor::ResizeRoom()
 {
     Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
 
@@ -293,6 +293,8 @@ void RoomEditor::ResizeRoom() const
 
     for (std::vector<uint8_t>& v : tilemap)
         v.resize(m_Width);
+
+    m_TilemapRenderTarget.SetSize(m_Width * 8, m_Height * 8);
 }
 
 void RoomEditor::ChangeEditingMode(const EditingMode newMode)

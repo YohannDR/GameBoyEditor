@@ -1,5 +1,6 @@
 ﻿#include "parser.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -41,9 +42,26 @@ bool_t Parser::Save()
         file.open(filePath, std::ifstream::out | std::ifstream::in | std::ifstream::app);
 
         for (const SymbolInfo& symbolInfo : association.second)
-        {
             file = RemoveExistingSymbol(file, filePath, symbolInfo);
+
+        std::filesystem::path onlyFilePath;
+        std::filesystem::path temp = filePath;
+
+        while (temp != Application::projectPath)
+        {
+            const std::filesystem::path name = temp.filename();
+            if (name == "src")
+                break;
+
+            onlyFilePath = name / onlyFilePath;
+            temp = temp.parent_path();
         }
+
+        onlyFilePath = onlyFilePath.parent_path().replace_extension(".h");
+        std::string includeFile = onlyFilePath.string();
+        std::ranges::replace(includeFile, '\\', '/');
+
+        file << "#include \"" << includeFile << "\"\n";
 
         for (const SymbolInfo& symbolInfo : association.second)
         {
@@ -62,6 +80,12 @@ bool_t Parser::Save()
     }
 
     return true;
+}
+
+void Parser::RegisterSymbol(const std::string& file, const std::string& symbolName, const SymbolType type)
+{
+    fileAssociations[file].emplace_back(type, symbolName);
+    existingSymbols.push_back(symbolName);
 }
 
 bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
@@ -197,8 +221,7 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
         }
     }
 
-    fileAssociations[filePath.string()].emplace_back(type, symbolName);
-    existingSymbols.push_back(symbolName);
+    RegisterSymbol(filePath.string(), symbolName, type);
 
     return true;
 }
@@ -230,8 +253,7 @@ bool_t Parser::ParseRoomInfo(std::ifstream& file, const std::filesystem::path& f
         rooms.emplace_back(gfx, tilemap, clip, ParsePalette(palette), spriteData);
     }
 
-    fileAssociations[filePath.string()].emplace_back(SymbolType::RoomData, "sRooms");
-    existingSymbols.push_back("sRooms");
+    RegisterSymbol(filePath.string(), "sRooms", SymbolType::RoomData);
 
     return true;
 }
@@ -268,8 +290,7 @@ bool_t Parser::ParseSpriteInfo(std::ifstream& file, const std::filesystem::path&
         sprites[symbolName].emplace_back(x, y, type, part);
     }
 
-    fileAssociations[filePath.string()].emplace_back(SymbolType::SpriteData, symbolName);
-    existingSymbols.push_back(symbolName);
+    RegisterSymbol(filePath.string(), symbolName, SymbolType::SpriteData);
 
     return true;
 }
@@ -342,8 +363,8 @@ bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& 
     }
 
     animations[symbolName] = animation;
-    fileAssociations[filePath.string()].emplace_back(SymbolType::Animation, symbolName);
-    existingSymbols.push_back(symbolName);
+
+    RegisterSymbol(filePath.string(), symbolName, SymbolType::Animation);
 
     return true;
 }
@@ -475,6 +496,9 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
     while (file)
     {
         std::getline(file, line);
+
+        if (line.contains("include") && line.contains(fileName.filename().string()))
+            continue;
 
         if (line.contains(symbol.second) && line.contains("const") && !line.contains("extern"))
         {
