@@ -78,7 +78,7 @@ bool_t Parser::Save()
             }
         }
 
-        // TODO trim duplicate includes
+        RemoveDuplicateIncludes(file, filePath);
 
         file.close();
     }
@@ -647,6 +647,44 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
 
     tempFile.open(fileName, std::ifstream::out | std::ifstream::in | std::ifstream::app);
     return tempFile;
+}
+
+void Parser::RemoveDuplicateIncludes(std::fstream& file, const std::filesystem::path& fileName)
+{
+    file.clear();
+    file.seekg(0);
+    std::string line;
+    std::vector<std::string> currentIncludes;
+    std::vector<std::string> lines;
+
+    while (file)
+    {
+        std::getline(file, line);
+
+        if (line.contains("include"))
+        {
+            if (!std::ranges::contains(currentIncludes, line))
+            {
+                lines.push_back(line);
+                currentIncludes.push_back(line);
+            }
+        }
+        else
+        {
+            lines.push_back(line);
+        }
+    }
+
+    std::fstream tempFile;
+    tempFile.open("temp.txt", std::fstream::out | std::fstream::ate);
+    for (size_t i = 0; i < lines.size() - 1; i++)
+        tempFile << lines[i] << '\n';
+
+    tempFile.close();
+    file.close();
+
+    (void)remove(fileName.string().c_str());
+    (void)rename("temp.txt", fileName.string().c_str());
 }
 
 void Parser::SaveGraphics(std::fstream& file, const std::string& symbolName)

@@ -69,6 +69,7 @@ private:
     static std::string MakePalette(const Palette& pal);
 
     static std::fstream RemoveExistingSymbol(std::fstream& file, const std::filesystem::path& fileName, const SymbolInfo& symbol);
+    static void RemoveDuplicateIncludes(std::fstream& file, const std::filesystem::path& fileName);
 
     static void SaveGraphics(std::fstream& file, const std::string& symbolName);
     static void SaveTilemap(std::fstream& file, const std::string& symbolName);
