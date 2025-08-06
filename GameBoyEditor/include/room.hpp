@@ -6,11 +6,13 @@
 
 struct Room
 {
-    std::string graphics;
     std::string tilemap;
-    std::string clipdata;
     Palette colorPalette;
     std::string spriteData;
+    std::string doorData;
+    uint8_t collisionTable;
+    uint16_t originX;
+    uint16_t originY;
 };
 
 struct SpriteData

@@ -29,6 +29,10 @@ void RoomEditor::Update()
     const float_t y = ImGui::GetCursorPosY();
     DrawOptions();
     DrawTileset();
+
+    if (m_SelectedGraphics == "<None>")
+        return;
+
     ImGui::SameLine();
     ImGui::SetCursorPosY(y);
     DrawRoom();
@@ -103,13 +107,13 @@ void RoomEditor::DrawTileset()
 {
     Ui::CreateSubWindow("roomTileset", ImGuiChildFlags_ResizeY, ImVec2(4 * 8 * 16, 0));
 
-    if (ImGui::BeginCombo("Graphics", Parser::rooms[m_RoomId].graphics.c_str()))
+    if (ImGui::BeginCombo("Graphics", m_SelectedGraphics.c_str()))
     {
         for (const std::string& s : Parser::graphics | std::ranges::views::keys)
         {
             if (ImGui::MenuItem(s.c_str()))
             {
-                Parser::rooms[m_RoomId].graphics = s;
+                m_SelectedGraphics = s;
 
                 const Graphics& gfx = Parser::graphics[s];
                 const size_t tileMax = gfx.size() / 16;
@@ -120,16 +124,20 @@ void RoomEditor::DrawTileset()
         ImGui::EndCombo();
     }
 
-    const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    if (m_SelectedGraphics != "<None>")
+    {
+        const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
 
-    ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 20);
-    Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+        ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 20);
+        Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+    }
+
     ImGui::EndChild();
 }
 
 void RoomEditor::DrawRoom()
 {
-    const Graphics& graphics = Parser::graphics[Parser::rooms[m_RoomId].graphics];
+    const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
     Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
     const Palette palette = Parser::rooms[m_RoomId].colorPalette;
 
@@ -279,10 +287,6 @@ void RoomEditor::LoadRoom()
     m_Height = static_cast<uint8_t>(tilemap.size());
     m_Width = static_cast<uint8_t>(tilemap[0].size());
     m_TilemapRenderTarget.SetSize(m_Width * 8, m_Height * 8);
-
-    const Graphics& gfx = Parser::graphics[Parser::rooms[m_RoomId].graphics];
-    const size_t tileMax = gfx.size() / 16;
-    m_GraphicsRenderTarget.SetSize(16 * 8, static_cast<int32_t>((1 + tileMax / 16) * 8));
 }
 
 void RoomEditor::ResizeRoom()

@@ -13,8 +13,9 @@ void AddResource::Setup(const SymbolType type)
     m_FileName = "";
     m_SymbolName = "";
 
-    m_AutoCreateGraphics = false;
-    m_RoomGraphics = "";
+    m_RoomCollisionTable = 0;
+    m_RoomOriginX = 0;
+    m_RoomOriginY = 0;
 }
 
 void AddResource::Update()
@@ -65,21 +66,9 @@ void AddResource::RoomFields()
     ImGui::SameLine();
     ImGui::Text("%d", static_cast<int32_t>(Parser::rooms.size()));
 
-    ImGui::Checkbox("Auto create new graphics", &m_AutoCreateGraphics);
-    ImGui::SetItemTooltip("Ticking this will automatically create new graphics for the room named 'sRoomX_Graphics' with X being the room number");
-
-    ImGui::BeginDisabled(m_AutoCreateGraphics);
-    if (ImGui::BeginCombo("Graphics", m_RoomGraphics.c_str()))
-    {
-        for (const std::string& s : Parser::graphics | std::ranges::views::keys)
-        {
-            if (ImGui::MenuItem(s.c_str()))
-                m_RoomGraphics = s;
-        }
-
-        ImGui::EndCombo();
-    }
-    ImGui::EndDisabled();
+    ImGui::InputScalar("Collision table", ImGuiDataType_U8, &m_RoomCollisionTable);
+    ImGui::InputScalar("Origin X", ImGuiDataType_U8, &m_RoomOriginX);
+    ImGui::InputScalar("Origin Y", ImGuiDataType_U8, &m_RoomOriginY);
 
     if (ImGui::Button("Add"))
     {
@@ -98,7 +87,7 @@ void AddResource::CreateResource() const
             break;
 
         case SymbolType::Tilemap:
-        case SymbolType::Clipdata:
+        case SymbolType::DoorData:
         case SymbolType::SpriteData:
             return;
     }
@@ -127,32 +116,22 @@ void AddResource::CreateRoom()
 
     CreateRoomHeaderFile();
 
-    const std::string gfxName = m_AutoCreateGraphics ? std::string("sRoom") + roomIndex + "_Graphics" : m_RoomGraphics;
-
-    if (m_AutoCreateGraphics)
-    {
-        m_SymbolName = gfxName;
-        CreateGraphics();
-    }
-
-    Parser::RegisterSymbol(sourceFile, gfxName, SymbolType::Graphics);
-
     const std::string tilemapName = std::string("sRoom") + roomIndex + "_Tilemap";
     Tilemap dummyTilemap;
     dummyTilemap.emplace_back(1);
     Parser::tilemaps[tilemapName] = dummyTilemap;
     Parser::RegisterSymbol(sourceFile, tilemapName, SymbolType::Tilemap);
 
-    const std::string clipdataName = std::string("sRoom") + roomIndex + "_Clipdata";
-    Parser::clipdata[clipdataName] = dummyTilemap;
-    Parser::RegisterSymbol(sourceFile, clipdataName, SymbolType::Clipdata);
-
     const std::string spriteDataName = std::string("sRoom") + roomIndex + "_SpriteData";
-    Parser::sprites[tilemapName] = {};
+    Parser::sprites[spriteDataName] = {};
     Parser::RegisterSymbol(sourceFile, spriteDataName, SymbolType::SpriteData);
 
+    const std::string doorDataName = std::string("sRoom") + roomIndex + "_DoorData";
+    Parser::roomsDoorData[doorDataName] = {};
+    Parser::RegisterSymbol(sourceFile, doorDataName, SymbolType::DoorData);
+
     constexpr Palette dummyPalette = { White, LightGrey, DarkGrey, Black };
-    Parser::rooms.emplace_back(gfxName, tilemapName, clipdataName, dummyPalette, spriteDataName);
+    Parser::rooms.emplace_back(tilemapName, dummyPalette, spriteDataName, doorDataName, m_RoomCollisionTable, m_RoomOriginX, m_RoomOriginY);
 
     RegenerateRoomIncludeFile();
 }
@@ -174,7 +153,7 @@ void AddResource::RegenerateRoomIncludeFile()
     file.close();
 }
 
-void AddResource::CreateRoomHeaderFile() const
+void AddResource::CreateRoomHeaderFile()
 {
     const std::string roomIndex = std::to_string(Parser::rooms.size());
     const std::string headerFile = Application::projectPath + R"(\include\data\rooms\room)" + roomIndex + ".h";
@@ -183,15 +162,9 @@ void AddResource::CreateRoomHeaderFile() const
     file.open(headerFile);
 
     file << "#ifndef ROOM_" << roomIndex << "_H\n#define ROOM_" << roomIndex << "_H\n\n#include \"room.h\"\n\n";
-
-    if (m_AutoCreateGraphics)
-        file << "extern const u8 sRoom" << roomIndex << "_Graphics[];\n";
-    else
-        file << "extern const u8 " << m_RoomGraphics << "[];\n";
-
     file << "extern const u8 sRoom" << roomIndex << "_Tilemap[];\n";
-    file << "extern const u8 sRoom" << roomIndex << "_Clipdata[];\n";
     file << "extern const struct RoomSprite sRoom" << roomIndex << "_SpriteData[];\n";
+    file << "extern const u8 sRoom" << roomIndex << "_DoorData[];\n";
 
     file << "\n#endif /* ROOM_" << roomIndex << "_H */\n";
 }

@@ -18,6 +18,10 @@ private:
 
     std::string m_FullFilePath;
 
+    uint8_t m_RoomCollisionTable = 0;
+    uint8_t m_RoomOriginX = 0;
+    uint8_t m_RoomOriginY = 0;
+
     void NormalSymbolFields();
     void RoomFields();
 
@@ -27,10 +31,7 @@ private:
     void CreateRoom();
 
     static void RegenerateRoomIncludeFile();
-    void CreateRoomHeaderFile() const;
-
-    std::string m_RoomGraphics;
-    bool_t m_AutoCreateGraphics = false;
+    static void CreateRoomHeaderFile();
 
     SymbolType m_Type = SymbolType::Graphics;
 };

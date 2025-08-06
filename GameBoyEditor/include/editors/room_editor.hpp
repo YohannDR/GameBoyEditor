@@ -26,6 +26,7 @@ private:
     void DrawResize();
     void DrawTileset();
     void DrawRoom();
+
     void DrawSprites(ImVec2 position, bool_t inBounds, size_t cursorX, size_t cursorY);
 
     void LoadRoom();
@@ -38,6 +39,8 @@ private:
 
     size_t m_RoomId = 0;
     size_t m_SelectedTile = 0;
+
+    std::string m_SelectedGraphics = "<None>";
 
     EditingMode m_EditingMode = EditingMode::Tile;
 

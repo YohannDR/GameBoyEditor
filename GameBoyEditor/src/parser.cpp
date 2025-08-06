@@ -69,8 +69,8 @@ bool_t Parser::Save()
             {
                 case SymbolType::Graphics: SaveGraphics(file, symbolInfo.second); break;
                 case SymbolType::Tilemap: SaveTilemap(file, symbolInfo.second); break;
-                case SymbolType::Clipdata: SaveClipdata(file, symbolInfo.second); break;
                 case SymbolType::SpriteData: SaveSpriteData(file, symbolInfo.second); break;
+                case SymbolType::DoorData: SaveDoorData(file, symbolInfo.second); break;
                 case SymbolType::Animation: SaveAnimation(file, symbolInfo.second); break;
                 case SymbolType::RoomData: SaveRoomData(file, symbolInfo.second); break;
             }
@@ -150,13 +150,6 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
         std::getline(file, line);
         type = SymbolType::Tilemap;
     }
-    else if (symbolName.contains("Clipdata"))
-    {
-        std::getline(file, line);
-        (void)sscanf_s(line.c_str(), "%d, %d", &width, &height);
-        std::getline(file, line);
-        type = SymbolType::Clipdata;
-    }
     else
     {
         return false;
@@ -181,16 +174,17 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
             );
             data.append_range(buffer);
         }
-        else if (type == SymbolType::Tilemap || type == SymbolType::Clipdata)
+        else if (type == SymbolType::Tilemap)
         {
-            int32_t buffer[20];
-            (void)sscanf_s(line.c_str(), "%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x",
-                &buffer[0],  &buffer[1],  &buffer[2],  &buffer[3],  &buffer[4],
-                &buffer[5],  &buffer[6],  &buffer[7],  &buffer[8],  &buffer[9],
-                &buffer[10], &buffer[11], &buffer[12], &buffer[13], &buffer[14],
-                &buffer[15], &buffer[16], &buffer[17], &buffer[18], &buffer[19]
-            );
-            data.append_range(buffer);
+            std::istringstream stream(line);
+
+            for (size_t i = 0; i < width; i++)
+            {
+                int32_t v;
+                char_t c;
+                stream >> std::hex >> v >> c;
+                data.push_back(v);
+            }
         }
     }
 
@@ -207,17 +201,6 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
         {
             const Tilemap::difference_type index = width * i;
             tilemaps[symbolName][i] = std::vector(data.begin() + index, data.begin() + index + width);
-        }
-    }
-    else if (type == SymbolType::Clipdata)
-    {
-        clipdata[symbolName].resize(height);
-
-        const size_t h = static_cast<size_t>(height);
-        for (size_t i = 0; i < h; i++)
-        {
-            const Tilemap::difference_type index = width * i;
-            clipdata[symbolName][i] = std::vector(data.begin() + index, data.begin() + index + width);
         }
     }
 
@@ -237,20 +220,27 @@ bool_t Parser::ParseRoomInfo(std::ifstream& file, const std::filesystem::path& f
         if (line.contains('['))
             continue;
 
-        const std::string gfx = line.substr(sizeof("        .graphics = ") - 1, line.find(',') - sizeof("        .graphics = ") + 1);
-        std::getline(file, line);
         const std::string tilemap = line.substr(sizeof("        .tilemap = ") - 1, line.find(',') - sizeof("        .tilemap = ") + 1);
-        std::getline(file, line);
-        const std::string clip = line.substr(sizeof("        .clipdata = ") - 1, line.find(',') - sizeof("        .clipdata = ") + 1);
         std::getline(file, line);
         const std::string palette = line.substr(sizeof("        .bgPalette = ") - 1, line.find(')') - sizeof("        .bgPalette = ") + 1);
         std::getline(file, line);
         const std::string spriteData = line.substr(sizeof("        .spriteData = ") - 1, line.find(',') - sizeof("        .spriteData = ") + 1);
+        std::getline(file, line);
+        const std::string doorData = line.substr(sizeof("        .doorData = ") - 1, line.find(',') - sizeof("        .doorData = ") + 1);
+        std::getline(file, line);
+        int32_t collisionTable;
+        (void)sscanf_s(line.c_str(), "        .collisionTable = %d,", &collisionTable);
+        std::getline(file, line);
+        int32_t originX;
+        (void)sscanf_s(line.c_str(), "        .originX = SCREEN_SIZE_X_SUB_PIXEL * %d,", &originX);
+        std::getline(file, line);
+        int32_t originY;
+        (void)sscanf_s(line.c_str(), "        .originY = SCREEN_SIZE_X_SUB_PIXEL * %d,", &originY);
 
         // Skip the line with },
         std::getline(file, line);
 
-        rooms.emplace_back(gfx, tilemap, clip, ParsePalette(palette), spriteData);
+        rooms.emplace_back(tilemap, ParsePalette(palette), spriteData, doorData, collisionTable, originX, originY);
     }
 
     RegisterSymbol(filePath.string(), "sRooms", SymbolType::RoomData);
@@ -593,28 +583,6 @@ void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
     file << "};\n";
 }
 
-void Parser::SaveClipdata(std::fstream& file, const std::string& symbolName)
-{
-    file << "\nconst u8 " << symbolName << "[] = {\n";
-
-    const Tilemap& tilemap = clipdata[symbolName];
-
-    file << TAB << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
-
-    for (const std::vector<uint8_t>& row : tilemap)
-    {
-        file << TAB;
-        for (size_t j = 0; j < row.size(); j++)
-        {
-            file << ToHex(row[j]) << ',';
-            if (j == row.size() - 1)
-                file << '\n';
-        }
-    }
-
-    file << "};\n";
-}
-
 void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
 {
     file << "\nconst struct RoomSprite " << symbolName << "[] = {\n";
@@ -632,6 +600,10 @@ void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
     }
 
     file << TAB "[" << spriteData.size() << "] = ROOM_SPRITE_TERMINATOR\n};\n";
+}
+
+void Parser::SaveDoorData(std::fstream& file, const std::string& symbolName)
+{
 }
 
 void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
@@ -677,11 +649,13 @@ void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
     for (size_t i = 0; i < rooms.size(); i++)
     {
         file << TAB "[" << i << "] = {\n";
-        file << TAB TAB ".graphics = " << rooms[i].graphics << ",\n";
         file << TAB TAB ".tilemap = " << rooms[i].tilemap << ",\n";
-        file << TAB TAB ".clipdata = " << rooms[i].clipdata << ",\n";
         file << TAB TAB ".bgPalette = " << MakePalette(rooms[i].colorPalette) << ",\n";
         file << TAB TAB ".spriteData = " << rooms[i].spriteData << ",\n";
+        file << TAB TAB ".doorData = " << rooms[i].doorData << ",\n";
+        file << TAB TAB ".collisionTable = " << static_cast<size_t>(rooms[i].collisionTable) << ",\n";
+        file << TAB TAB ".originX = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originX) << ",\n";
+        file << TAB TAB ".originY = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originY) << ",\n";
         file << TAB "},\n";
     }
 

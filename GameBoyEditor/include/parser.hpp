@@ -11,13 +11,14 @@
 
 using Tilemap = std::vector<std::vector<uint8_t>>;
 using Graphics = std::vector<uint8_t>;
+using DoorData = std::vector<uint8_t>;
 
 enum class SymbolType : uint8_t
 {
     Graphics,
     Tilemap,
-    Clipdata,
     SpriteData,
+    DoorData,
     Animation,
     RoomData
 };
@@ -36,9 +37,9 @@ public:
 
     static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
-    static inline std::unordered_map<std::string, Tilemap> clipdata;
     static inline std::vector<Room> rooms;
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
+    static inline std::unordered_map<std::string, DoorData> roomsDoorData;
     static inline std::unordered_map<std::string, Animation> animations;
 
     static inline std::unordered_map<std::string, std::vector<SymbolInfo>> fileAssociations;
@@ -64,8 +65,8 @@ private:
 
     static void SaveGraphics(std::fstream& file, const std::string& symbolName);
     static void SaveTilemap(std::fstream& file, const std::string& symbolName);
-    static void SaveClipdata(std::fstream& file, const std::string& symbolName);
     static void SaveSpriteData(std::fstream& file, const std::string& symbolName);
+    static void SaveDoorData(std::fstream& file, const std::string& symbolName);
     static void SaveAnimation(std::fstream& file, const std::string& symbolName);
     static void SaveRoomData(std::fstream& file, const std::string& symbolName);
 
