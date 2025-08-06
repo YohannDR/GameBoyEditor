@@ -5,6 +5,7 @@
 #include "application.hpp"
 #include "editors/add_resource.hpp"
 #include "editors/animation_editor.hpp"
+#include "editors/edit_door_window.hpp"
 #include "editors/edit_sprite_window.hpp"
 #include "editors/graphics_editor.hpp"
 #include "editors/room_editor.hpp"
@@ -321,6 +322,7 @@ void Ui::SetupWindow()
     m_Windows.push_back(new GraphicsEditor());
     m_Windows.push_back(new RoomEditor());
     m_Windows.push_back(new EditSpriteWindow());
+    m_Windows.push_back(new EditDoorWindow());
     m_Windows.push_back(new AnimationEditor());
     m_Windows.push_back(new AddResource());
 

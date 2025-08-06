@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <ranges>
 
 #include "application.hpp"
 
@@ -73,8 +74,11 @@ bool_t Parser::Save()
                 case SymbolType::DoorData: SaveDoorData(file, symbolInfo.second); break;
                 case SymbolType::Animation: SaveAnimation(file, symbolInfo.second); break;
                 case SymbolType::RoomData: SaveRoomData(file, symbolInfo.second); break;
+                case SymbolType::Doors: SaveDoors(file, symbolInfo.second); break;
             }
         }
+
+        // TODO trim duplicate includes
 
         file.close();
     }
@@ -86,6 +90,34 @@ void Parser::RegisterSymbol(const std::string& file, const std::string& symbolNa
 {
     fileAssociations[file].emplace_back(type, symbolName);
     existingSymbols.push_back(symbolName);
+}
+
+size_t Parser::GetDoorId(const Door& door)
+{
+    return std::ranges::find(doors, door) - doors.begin();
+}
+
+void Parser::DeleteDoor(const Door& door)
+{
+    const size_t index = GetDoorId(door);
+    std::erase(doors, door);
+
+    for (DoorData& doorData : roomsDoorData | std::ranges::views::values)
+    {
+        for (size_t i = 0; i < doorData.size(); i++)  // NOLINT(modernize-loop-convert)
+        {
+            if (doorData[i] > index)
+                doorData[i]--;
+        }
+    }
+
+    for (Door& d : doors)
+    {
+        if (d.targetDoor > index)
+            d.targetDoor--;
+        else if (d.targetDoor == index)
+            d.targetDoor = 0xFF; // TODO Maybe print a warning or something?
+    }
 }
 
 bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
@@ -105,7 +137,7 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
         if (line.contains("extern"))
             continue;
 
-        if (line.starts_with("const u8 "))
+        if (line.starts_with("const u8 ") && (line.contains("Graphics") || line.contains("Tilemap")))
         {
             ParseGraphicsArray(file, filePath, line);
         }
@@ -120,6 +152,14 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
         else if (line.starts_with("static const u8") && line.contains("_Frame"))
         {
             ParseAnimation(file, filePath, line);
+        }
+        else if (line.starts_with("const u8 ") && line.contains("DoorData"))
+        {
+            ParseDoorData(file, filePath, line);
+        }
+        else if (line.starts_with("const struct Door"))
+        {
+            ParseDoors(file, filePath, line);
         }
     }
 
@@ -359,6 +399,79 @@ bool_t Parser::ParseAnimation(std::ifstream& file, const std::filesystem::path& 
     return true;
 }
 
+bool_t Parser::ParseDoorData(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    const size_t idx = line.find('[');
+    const std::string symbolName = line.substr(sizeof("const u8"), idx - sizeof("const u8"));
+
+    DoorData doorData;
+
+    for (;;)
+    {
+        std::getline(file, line);
+
+        if (line.contains("DOOR_NONE"))
+            break;
+
+        int32_t doorId;
+        (void)sscanf_s(line.c_str(), "    %d,", &doorId);
+        doorData.push_back(static_cast<uint8_t>(doorId));
+    }
+
+    roomsDoorData[symbolName] = doorData;
+    RegisterSymbol(filePath.string(), symbolName, SymbolType::DoorData);
+
+    return true;
+}
+
+bool_t Parser::ParseDoors(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    while (true)
+    {
+        std::getline(file, line);
+        if (line[0] == '}')
+            break;
+
+        if (line.contains('['))
+            continue;
+
+        int32_t x;
+        (void)sscanf_s(line.c_str(), "        .x = %d,", &x);
+        std::getline(file, line);
+        int32_t y;
+        (void)sscanf_s(line.c_str(), "        .y = %d,", &y);
+        std::getline(file, line);
+        int32_t ownerRoom;
+        (void)sscanf_s(line.c_str(), "        .ownerRoom = %d,", &ownerRoom);
+        std::getline(file, line);
+        int32_t height;
+        (void)sscanf_s(line.c_str(), "        .height = %d,", &height);
+        std::getline(file, line);
+        int32_t width;
+        (void)sscanf_s(line.c_str(), "        .width = %d,", &width);
+        std::getline(file, line);
+        int32_t targetDoor;
+        (void)sscanf_s(line.c_str(), "        .targetDoor = %d,", &targetDoor);
+        std::getline(file, line);
+        int32_t exitX;
+        (void)sscanf_s(line.c_str(), "        .exitX = %d,", &exitX);
+        std::getline(file, line);
+        int32_t exitY;
+        (void)sscanf_s(line.c_str(), "        .exitY = %d,", &exitY);
+        std::getline(file, line);
+        int32_t tileset;
+        (void)sscanf_s(line.c_str(), "        .tileset = %d,", &tileset);
+
+        // Skip the line with },
+        std::getline(file, line);
+
+        doors.emplace_back(x, y, ownerRoom, height, width, targetDoor, exitX, exitY, tileset);
+    }
+
+    RegisterSymbol(filePath.string(), "sDoors", SymbolType::Doors);
+    return true;
+}
+
 void Parser::ParseEnums()
 {
     // Look for specific enums in specific files
@@ -487,9 +600,6 @@ std::fstream Parser::RemoveExistingSymbol(std::fstream& file, const std::filesys
     {
         std::getline(file, line);
 
-        if (line.contains("include") && line.contains(fileName.filename().string()))
-            continue;
-
         if (line.contains(symbol.second) && line.contains("const") && !line.contains("extern"))
         {
             deleting = true;
@@ -604,6 +714,14 @@ void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
 
 void Parser::SaveDoorData(std::fstream& file, const std::string& symbolName)
 {
+    file << "\nconst u8 " << symbolName << "[] = {\n";
+
+    const DoorData& doorData = roomsDoorData[symbolName];
+
+    for (const uint8_t doorId : doorData)
+        file << TAB << static_cast<size_t>(doorId) << ",\n";
+
+    file << TAB << "DOOR_NONE\n};\n";
 }
 
 void Parser::SaveAnimation(std::fstream& file, const std::string& symbolName)
@@ -656,6 +774,28 @@ void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
         file << TAB TAB ".collisionTable = " << static_cast<size_t>(rooms[i].collisionTable) << ",\n";
         file << TAB TAB ".originX = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originX) << ",\n";
         file << TAB TAB ".originY = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originY) << ",\n";
+        file << TAB "},\n";
+    }
+
+    file << "};\n";
+}
+
+void Parser::SaveDoors(std::fstream& file, const std::string& symbolName)
+{
+    file << "\nconst struct Door " << symbolName << "[] = {\n";
+
+    for (size_t i = 0; i < doors.size(); i++)
+    {
+        file << TAB "[" << i << "] = {\n";
+        file << TAB TAB ".x = " << doors[i].x << ",\n";
+        file << TAB TAB ".y = " << doors[i].y << ",\n";
+        file << TAB TAB ".ownerRoom = " << static_cast<size_t>(doors[i].ownerRoom) << ",\n";
+        file << TAB TAB ".height = " << static_cast<size_t>(doors[i].height) << ",\n";
+        file << TAB TAB ".width = " << static_cast<size_t>(doors[i].width) << ",\n";
+        file << TAB TAB ".targetDoor = " << static_cast<size_t>(doors[i].targetDoor) << ",\n";
+        file << TAB TAB ".exitX = " << static_cast<int32_t>(doors[i].exitX) << ",\n";
+        file << TAB TAB ".exitY = " << static_cast<int32_t>(doors[i].exitY) << ",\n";
+        file << TAB TAB ".tileset = " << static_cast<size_t>(doors[i].tileset) << ",\n";
         file << TAB "},\n";
     }
 

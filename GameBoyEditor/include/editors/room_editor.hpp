@@ -28,6 +28,7 @@ private:
     void DrawRoom();
 
     void DrawSprites(ImVec2 position, bool_t inBounds, size_t cursorX, size_t cursorY);
+    void DrawDoors(ImVec2 position, bool_t inBounds, size_t cursorX, size_t cursorY);
 
     void LoadRoom();
     void ResizeRoom();
@@ -46,6 +47,11 @@ private:
 
     SpriteData* m_SelectedSprite = nullptr;
     SpriteData* m_HoveredSprite = nullptr;
+
+    Door* m_SelectedDoor = nullptr;
+    Door* m_HoveredDoor = nullptr;
+    uint8_t m_SelectedDoorAnchorX = 0;
+    uint8_t m_SelectedDoorAnchorY = 0;
 
     bool_t m_IsObjectEditPopupOpen = false;
     size_t m_BackupCursorX = 0;

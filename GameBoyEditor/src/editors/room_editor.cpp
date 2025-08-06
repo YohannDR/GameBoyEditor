@@ -7,6 +7,7 @@
 #include "application.hpp"
 #include "parser.hpp"
 #include "ui.hpp"
+#include "editors/edit_door_window.hpp"
 #include "editors/edit_sprite_window.hpp"
 
 RoomEditor::RoomEditor()
@@ -178,6 +179,7 @@ void RoomEditor::DrawRoom()
     }
 
     DrawSprites(position, inBounds, x, y);
+    DrawDoors(position, inBounds, x, y);
 
     ImGui::EndChild();
 }
@@ -243,6 +245,8 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
 
             ImGui::Text("Object menu");
 
+            ImGui::SeparatorText("Sprite");
+
             ImGui::BeginDisabled(spriteData.size() == 20);
             if (ImGui::Button("Add sprite"))
             {
@@ -266,6 +270,119 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
             {
                 std::erase(spriteData, *m_HoveredSprite);
                 m_HoveredSprite = nullptr;
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+            ImGui::EndDisabled();
+
+            ImGui::EndPopup();
+        }
+
+        if (!ImGui::IsPopupOpen("objectEditPopup"))
+            m_IsObjectEditPopupOpen = false;
+    }
+}
+
+void RoomEditor::DrawDoors(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY)
+{
+    DoorData& doorData = Parser::roomsDoorData[Parser::rooms[m_RoomId].doorData];
+
+    ImDrawList* const dl = ImGui::GetWindowDrawList();
+
+    if (!m_IsObjectEditPopupOpen)
+        m_HoveredDoor = nullptr;
+
+    for (const uint8_t doorId : doorData)
+    {
+        Door& door = Parser::doors[doorId];
+
+        if (m_EditingMode == EditingMode::Object)
+        {
+            if (m_SelectedDoor == &door)
+            {
+                if (inBounds)
+                {
+                    m_SelectedDoor->x = static_cast<uint8_t>(cursorX - m_SelectedDoorAnchorX);
+                    m_SelectedDoor->y = static_cast<uint8_t>(cursorY - m_SelectedDoorAnchorY);
+                }
+
+                if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                    m_SelectedDoor = nullptr;
+            }
+
+            if (inBounds &&
+                cursorX >= door.x && cursorX < static_cast<uint8_t>(door.x + door.width) &&
+                cursorY >= door.y && cursorY < static_cast<uint8_t>(door.y + door.height))
+            {
+                if (!m_IsObjectEditPopupOpen)
+                    m_HoveredDoor = &door;
+
+                if (m_SelectedDoor == nullptr && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                {
+                    m_SelectedDoor = &door;
+                    m_SelectedDoorAnchorX = cursorX - door.x;
+                    m_SelectedDoorAnchorY = cursorY - door.y;
+                }
+            }
+        }
+        else
+        {
+            m_SelectedDoor = nullptr;
+        }
+
+        const ImVec2 p1 = ImVec2(
+            position.x + static_cast<float_t>(door.x) * m_TilemapRenderTarget.scale * 8,
+            position.y + static_cast<float_t>(door.y) * m_TilemapRenderTarget.scale * 8
+        );
+
+        const ImVec2 p2 = ImVec2(
+            p1.x + m_TilemapRenderTarget.scale * 8 * static_cast<float_t>(door.width),
+            p1.y + m_TilemapRenderTarget.scale * 8 * static_cast<float_t>(door.height)
+        );
+
+        dl->AddRect(p1, p2, IM_COL32(0x00, 0x00, 0xFF, 0xFF), 0, 0, 4);
+    }
+
+    if (inBounds && m_EditingMode == EditingMode::Object)
+    {
+        if (ImGui::BeginPopupContextItem("objectEditPopup"))
+        {
+            ImGui::SeparatorText("Door");
+
+            if (!m_IsObjectEditPopupOpen)
+            {
+                m_BackupCursorX = cursorX;
+                m_BackupCursorY = cursorY + 1;
+                m_IsObjectEditPopupOpen = true;
+            }
+
+            ImGui::BeginDisabled(doorData.size() == 4 || Parser::doors.size() == 255);
+            if (ImGui::Button("Add door"))
+            {
+                doorData.push_back(static_cast<uint8_t>(Parser::doors.size()));
+                Parser::doors.emplace_back(m_BackupCursorX, m_BackupCursorY, m_RoomId, 1, 1, 0, 0, 0, 0xFF);
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+            ImGui::EndDisabled();
+
+            ImGui::BeginDisabled(m_HoveredDoor == nullptr);
+            if (ImGui::Button("Edit door"))
+            {
+                Ui::ShowWindow<EditDoorWindow>()->Setup(m_HoveredDoor);
+
+                ImGui::CloseCurrentPopup();
+                m_IsObjectEditPopupOpen = false;
+            }
+
+            if (ImGui::Button("Remove door"))
+            {
+                std::erase(doorData, std::ranges::find(Parser::doors, *m_HoveredDoor) - Parser::doors.begin());
+                Parser::DeleteDoor(*m_HoveredDoor);
+
+                m_HoveredDoor = nullptr;
 
                 ImGui::CloseCurrentPopup();
                 m_IsObjectEditPopupOpen = false;
