@@ -9,6 +9,7 @@
 #include "editors/edit_sprite_window.hpp"
 #include "editors/graphics_editor.hpp"
 #include "editors/room_editor.hpp"
+#include "editors/tileset_editor.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_stdlib.h"
@@ -56,6 +57,9 @@ void Ui::MainMenuBar()
 
         if (ImGui::MenuItem("Animation editor"))
             ShowWindow<AnimationEditor>();
+
+        if (ImGui::MenuItem("Tileset editor"))
+            ShowWindow<TilesetEditor>();
 
         ImGui::EndMenu();
     }
@@ -325,6 +329,7 @@ void Ui::SetupWindow()
     m_Windows.push_back(new EditDoorWindow());
     m_Windows.push_back(new AnimationEditor());
     m_Windows.push_back(new AddResource());
+    m_Windows.push_back(new TilesetEditor());
 
     ShowWindow<RoomEditor>();
 }

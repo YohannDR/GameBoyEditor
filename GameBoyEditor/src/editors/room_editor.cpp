@@ -110,7 +110,7 @@ void RoomEditor::DrawTileset()
 
     if (ImGui::BeginCombo("Graphics", m_SelectedGraphics.c_str()))
     {
-        for (const std::string& s : Parser::graphics | std::ranges::views::keys)
+        for (const std::string& s : Parser::tilesets)
         {
             if (ImGui::MenuItem(s.c_str()))
             {

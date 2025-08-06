@@ -75,6 +75,7 @@ bool_t Parser::Save()
                 case SymbolType::Animation: SaveAnimation(file, symbolInfo.second); break;
                 case SymbolType::RoomData: SaveRoomData(file, symbolInfo.second); break;
                 case SymbolType::Doors: SaveDoors(file, symbolInfo.second); break;
+                case SymbolType::Tilesets: SaveTilesets(file, symbolInfo.second); break;
             }
         }
 
@@ -120,6 +121,22 @@ void Parser::DeleteDoor(const Door& door)
     }
 }
 
+void Parser::DeleteTileset(const size_t index)
+{
+    tilesets.erase(tilesets.begin() + static_cast<decltype(tilesets)::difference_type>(index));
+
+    for (Door& door : doors)
+    {
+        if (door.tileset == 255)
+            continue;
+
+        if (door.tileset == index)
+            door.tileset = 255;
+        else if (door.tileset > index)
+            door.tileset--;
+    }
+}
+
 bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
 {
     std::ifstream file;
@@ -160,6 +177,10 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
         else if (line.starts_with("const struct Door"))
         {
             ParseDoors(file, filePath, line);
+        }
+        else if (line.starts_with("const u8* const sTilesets"))
+        {
+            ParseTilesets(file, filePath, line);
         }
     }
 
@@ -469,6 +490,22 @@ bool_t Parser::ParseDoors(std::ifstream& file, const std::filesystem::path& file
     }
 
     RegisterSymbol(filePath.string(), "sDoors", SymbolType::Doors);
+    return true;
+}
+
+bool_t Parser::ParseTilesets(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    while (true)
+    {
+        std::getline(file, line);
+        if (line[0] == '}')
+            break;
+
+        const std::string gfxName = line.substr(sizeof("    ") - 1, line.find(',') - sizeof("    ") + 1);
+        tilesets.push_back(gfxName);
+    }
+
+    RegisterSymbol(filePath.string(), "sTilesets", SymbolType::Tilesets);
     return true;
 }
 
@@ -836,6 +873,16 @@ void Parser::SaveDoors(std::fstream& file, const std::string& symbolName)
         file << TAB TAB ".tileset = " << static_cast<size_t>(doors[i].tileset) << ",\n";
         file << TAB "},\n";
     }
+
+    file << "};\n";
+}
+
+void Parser::SaveTilesets(std::fstream& file, const std::string& symbolName)
+{
+    file << "const u8* const " << symbolName << "[] = {\n";
+
+    for (const std::string& tileset : tilesets)
+        file << TAB << tileset << ",\n";
 
     file << "};\n";
 }

@@ -22,7 +22,8 @@ enum class SymbolType : uint8_t
     DoorData,
     Animation,
     RoomData,
-    Doors
+    Doors,
+    Tilesets
 };
 
 using SymbolInfo = std::pair<SymbolType, std::string>;
@@ -38,9 +39,11 @@ public:
     static void RegisterSymbol(const std::string& file, const std::string& symbolName, SymbolType type);
     _NODISCARD static size_t GetDoorId(const Door& door);
     static void DeleteDoor(const Door& door);
+    static void DeleteTileset(size_t index);
 
     static inline std::unordered_map<std::string, Graphics> graphics;
     static inline std::unordered_map<std::string, Tilemap> tilemaps;
+    static inline std::vector<std::string> tilesets;
     static inline std::vector<Room> rooms;
     static inline std::vector<Door> doors;
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
@@ -62,6 +65,7 @@ private:
     static bool_t ParseAnimation(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseDoorData(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseDoors(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseTilesets(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
 
     static void ParseEnums();
 
@@ -78,6 +82,7 @@ private:
     static void SaveAnimation(std::fstream& file, const std::string& symbolName);
     static void SaveRoomData(std::fstream& file, const std::string& symbolName);
     static void SaveDoors(std::fstream& file, const std::string& symbolName);
+    static void SaveTilesets(std::fstream& file, const std::string& symbolName);
 
     static std::string ToHex(size_t value);
 };

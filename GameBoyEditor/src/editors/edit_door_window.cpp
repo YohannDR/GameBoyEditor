@@ -33,9 +33,16 @@ void EditDoorWindow::Update()
 
     if (loadsTileset)
     {
-        constexpr uint8_t min = 0;
-        const uint8_t max = static_cast<uint8_t>(Parser::graphics.size() - 1);
-        ImGui::SliderScalar("Tileset to load", ImGuiDataType_U8, &m_Door->tileset, &min, &max);
+        if (ImGui::BeginCombo("Tileset to load", Parser::tilesets[m_Door->tileset].c_str()))
+        {
+            for (size_t i = 0; i < Parser::tilesets.size(); i++)
+            {
+                if (ImGui::MenuItem(Parser::tilesets[i].c_str()))
+                    m_Door->tileset = i;
+            }
+
+            ImGui::EndCombo();
+        }
     }
 
     if (m_Door->targetDoor == doorId)
