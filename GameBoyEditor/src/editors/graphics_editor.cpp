@@ -1,5 +1,6 @@
 ﻿#include "editors/graphics_editor.hpp"
 
+#include <functional>
 #include <ranges>
 
 #include "parser.hpp"
@@ -110,23 +111,30 @@ void GraphicsEditor::DrawCurrentTile()
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && pixelIndex != std::numeric_limits<size_t>::max())
     {
-        if (m_PlotPixelAction == nullptr)
-            m_PlotPixelAction = new PlotPixelAction(&graphics);
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+        {
+            PerformFill(pixelIndex);
+        }
+        else
+        {
+            if (m_PlotPixelAction == nullptr)
+                m_PlotPixelAction = new PlotPixelAction(&graphics);
 
-        const Color color = m_ColorPalette[m_SelectedColor];
-        const size_t bitIndex = 7 - pixelIndex % 8;
+            const Color color = m_ColorPalette[m_SelectedColor];
+            const size_t bitIndex = 7 - pixelIndex % 8;
 
-        const size_t row = pixelIndex / 8;
-        uint8_t& plane0 = graphics[m_SelectedTile * 16 + row * 2 + 0];
-        uint8_t& plane1 = graphics[m_SelectedTile * 16 + row * 2 + 1];
+            const size_t row = pixelIndex / 8;
+            uint8_t& plane0 = graphics[m_SelectedTile * 16 + row * 2 + 0];
+            uint8_t& plane1 = graphics[m_SelectedTile * 16 + row * 2 + 1];
 
-        const uint8_t newPlane0 = static_cast<uint8_t>((plane0 & ~(1 << bitIndex)) | (color >> 0 & 1) << bitIndex);
-        const uint8_t newPlane1 = static_cast<uint8_t>((plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex);
+            const uint8_t newPlane0 = static_cast<uint8_t>((plane0 & ~(1 << bitIndex)) | (color >> 0 & 1) << bitIndex);
+            const uint8_t newPlane1 = static_cast<uint8_t>((plane1 & ~(1 << bitIndex)) | (color >> 1 & 1) << bitIndex);
 
-        m_PlotPixelAction->AddEdit(static_cast<uint8_t>(m_SelectedTile), static_cast<uint8_t>(row), plane0, plane1, newPlane0, newPlane1);
+            m_PlotPixelAction->AddEdit(static_cast<uint8_t>(m_SelectedTile), static_cast<uint8_t>(row), plane0, plane1, newPlane0, newPlane1);
 
-        plane0 = newPlane0;
-        plane1 = newPlane1;
+            plane0 = newPlane0;
+            plane1 = newPlane1;
+        }
     }
 
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -139,4 +147,56 @@ void GraphicsEditor::DrawCurrentTile()
     }
 
     ImGui::EndChild();
+}
+
+void GraphicsEditor::PerformFill(const size_t pixelIndex)
+{
+    Graphics& graphics = Parser::graphics[m_SelectedGraphics];
+
+    const size_t bitIndex = 7 - pixelIndex % 8;
+
+    const size_t row = pixelIndex / 8;
+    const uint8_t plane0 = graphics[m_SelectedTile * 16 + row * 2 + 0] >> bitIndex & 1;
+    const uint8_t plane1 = graphics[m_SelectedTile * 16 + row * 2 + 1] >> bitIndex & 1;
+
+    const Color oldColor = static_cast<Color>(plane0 | plane1 << 1);
+    const Color newColor = m_ColorPalette[m_SelectedColor];
+
+    if (oldColor == newColor)
+        return;
+
+    PlotPixelAction* action = new PlotPixelAction(&graphics);
+
+    // https://www.geeksforgeeks.org/dsa/flood-fill-algorithm/
+    const std::function<void(Graphics&, int32_t, int32_t)> dfs = [&dfs, this, oldColor, newColor, action]
+        (Graphics& gfx, const int32_t x, const int32_t y)
+    {
+        if (x < 0 || x >= 8 || y < 0 || y >= 8)
+            return;
+
+        const size_t index = m_SelectedTile * 16 + static_cast<size_t>(y) * 2;
+
+        const uint8_t p0 = gfx[index + 0];
+        const uint8_t p1 = gfx[index + 1];
+
+        const Color pixelColor = static_cast<Color>((p0 >> x & 1) | (p1 >> x & 1) << 1);
+        if (pixelColor != oldColor)
+            return;
+
+        const uint8_t newPlane0 = static_cast<uint8_t>((p0 & ~(1 << x)) | (newColor >> 0 & 1) << x);
+        const uint8_t newPlane1 = static_cast<uint8_t>((p1 & ~(1 << x)) | (newColor >> 1 & 1) << x);
+        gfx[index + 0] = newPlane0;
+        gfx[index + 1] = newPlane1;
+
+        action->AddEdit(m_SelectedTile, y, p0, p1, newPlane0, newPlane1);
+
+        dfs(gfx, x + 1, y);
+        dfs(gfx, x - 1, y);
+        dfs(gfx, x, y + 1);
+        dfs(gfx, x, y - 1);
+    };
+
+    dfs(graphics, static_cast<uint8_t>(bitIndex), static_cast<uint8_t>(row));
+
+    m_ActionQueue.Push(action);
 }

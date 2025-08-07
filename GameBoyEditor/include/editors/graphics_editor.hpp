@@ -18,6 +18,8 @@ private:
     void DrawGraphics();
     void DrawCurrentTile();
 
+    void PerformFill(size_t pixelIndex);
+
     std::string m_SelectedGraphics = "<None>";
     Palette m_ColorPalette = { White, LightGrey, DarkGrey, Black };
 
