@@ -31,8 +31,10 @@ void Ui::MainMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
+        ImGui::BeginDisabled(Application::IsProjectLoaded());
         if (ImGui::MenuItem("Locate project"))
             openPopup = true;
+        ImGui::EndDisabled();
 
         ImGui::BeginDisabled(!Application::IsProjectLoaded());
         if (ImGui::MenuItem("Build"))
