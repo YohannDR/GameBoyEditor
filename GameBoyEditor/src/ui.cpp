@@ -270,7 +270,7 @@ void Ui::DrawTilemap(const RenderTarget& renderTarget, const Graphics& graphics,
         compactTilemap.append_range(i);
 
     const int32_t tilemapWidth = static_cast<int32_t>(tilemap[0].size());
-    const int32_t tilemapSize = static_cast<int32_t>(tilemap.size()) * tilemapWidth;
+    const int32_t tilemapSize = static_cast<int32_t>(compactTilemap.size());
     m_TilemapTexture.SetData(GL_R8, GL_RED, tilemapSize, 1, compactTilemap.data());
 
     m_GraphicsTexture.BindToActive(0);

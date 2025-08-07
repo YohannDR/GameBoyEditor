@@ -54,6 +54,8 @@ void RenderTarget::Unbind() const
 void RenderTarget::Render() const
 {
     Bind();
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
     glBindVertexArray(m_Vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     Unbind();
