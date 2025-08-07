@@ -180,6 +180,7 @@ void RoomEditor::DrawRoom()
 
     DrawSprites(position, inBounds, x, y);
     DrawDoors(position, inBounds, x, y);
+    DrawObjectContextMenu(x, y);
 
     ImGui::EndChild();
 }
@@ -231,62 +232,11 @@ void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const
 
         dl->AddRect(p1, p2, IM_COL32(0x00, 0xFF, 0x00, 0xFF), 0, 0, 4);
     }
-
-    if (inBounds && m_EditingMode == EditingMode::Object)
-    {
-        if (ImGui::BeginPopupContextItem("objectEditPopup"))
-        {
-            if (!m_IsObjectEditPopupOpen)
-            {
-                m_BackupCursorX = cursorX;
-                m_BackupCursorY = cursorY + 1;
-                m_IsObjectEditPopupOpen = true;
-            }
-
-            ImGui::Text("Object menu");
-
-            ImGui::SeparatorText("Sprite");
-
-            ImGui::BeginDisabled(spriteData.size() == 20);
-            if (ImGui::Button("Add sprite"))
-            {
-                spriteData.emplace_back(m_BackupCursorX, m_BackupCursorY, "STYPE_NONE", 0);
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-            ImGui::EndDisabled();
-
-            ImGui::BeginDisabled(m_HoveredSprite == nullptr);
-            if (ImGui::Button("Edit sprite"))
-            {
-                Ui::ShowWindow<EditSpriteWindow>()->Setup(m_HoveredSprite);
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-
-            if (ImGui::Button("Remove sprite"))
-            {
-                std::erase(spriteData, *m_HoveredSprite);
-                m_HoveredSprite = nullptr;
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-            ImGui::EndDisabled();
-
-            ImGui::EndPopup();
-        }
-
-        if (!ImGui::IsPopupOpen("objectEditPopup"))
-            m_IsObjectEditPopupOpen = false;
-    }
 }
 
 void RoomEditor::DrawDoors(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY)
 {
-    DoorData& doorData = Parser::roomsDoorData[Parser::rooms[m_RoomId].doorData];
+    const DoorData& doorData = Parser::roomsDoorData[Parser::rooms[m_RoomId].doorData];
 
     ImDrawList* const dl = ImGui::GetWindowDrawList();
 
@@ -343,58 +293,97 @@ void RoomEditor::DrawDoors(const ImVec2 position, const bool_t inBounds, const s
 
         dl->AddRect(p1, p2, IM_COL32(0x00, 0x00, 0xFF, 0xFF), 0, 0, 4);
     }
+}
 
-    if (inBounds && m_EditingMode == EditingMode::Object)
+void RoomEditor::DrawObjectContextMenu(const size_t cursorX, const size_t cursorY)
+{
+    if (m_EditingMode != EditingMode::Object)
+        return;
+
+    if (ImGui::BeginPopupContextItem("objectEditPopup"))
     {
-        if (ImGui::BeginPopupContextItem("objectEditPopup"))
+        std::vector<SpriteData>& spriteData = Parser::sprites[Parser::rooms[m_RoomId].spriteData];
+        DoorData& doorData = Parser::roomsDoorData[Parser::rooms[m_RoomId].doorData];
+
+        if (!m_IsObjectEditPopupOpen)
         {
-            ImGui::SeparatorText("Door");
-
-            if (!m_IsObjectEditPopupOpen)
-            {
-                m_BackupCursorX = cursorX;
-                m_BackupCursorY = cursorY + 1;
-                m_IsObjectEditPopupOpen = true;
-            }
-
-            ImGui::BeginDisabled(doorData.size() == 4 || Parser::doors.size() == 255);
-            if (ImGui::Button("Add door"))
-            {
-                doorData.push_back(static_cast<uint8_t>(Parser::doors.size()));
-                Parser::doors.emplace_back(m_BackupCursorX, m_BackupCursorY, m_RoomId, 1, 1, 0, 0, 0, 0xFF);
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-            ImGui::EndDisabled();
-
-            ImGui::BeginDisabled(m_HoveredDoor == nullptr);
-            if (ImGui::Button("Edit door"))
-            {
-                Ui::ShowWindow<EditDoorWindow>()->Setup(m_HoveredDoor);
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-
-            if (ImGui::Button("Remove door"))
-            {
-                std::erase(doorData, std::ranges::find(Parser::doors, *m_HoveredDoor) - Parser::doors.begin());
-                Parser::DeleteDoor(*m_HoveredDoor);
-
-                m_HoveredDoor = nullptr;
-
-                ImGui::CloseCurrentPopup();
-                m_IsObjectEditPopupOpen = false;
-            }
-            ImGui::EndDisabled();
-
-            ImGui::EndPopup();
+            m_BackupCursorX = cursorX;
+            m_BackupCursorY = cursorY + 1;
+            m_IsObjectEditPopupOpen = true;
         }
 
-        if (!ImGui::IsPopupOpen("objectEditPopup"))
+        ImGui::Text("Object menu");
+
+        ImGui::SeparatorText("Sprite");
+
+        ImGui::BeginDisabled(spriteData.size() == 20);
+        if (ImGui::Button("Add sprite"))
+        {
+            spriteData.emplace_back(m_BackupCursorX, m_BackupCursorY, "STYPE_NONE", 0);
+
+            ImGui::CloseCurrentPopup();
             m_IsObjectEditPopupOpen = false;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(m_HoveredSprite == nullptr);
+        if (ImGui::Button("Edit sprite"))
+        {
+            Ui::ShowWindow<EditSpriteWindow>()->Setup(m_HoveredSprite);
+
+            ImGui::CloseCurrentPopup();
+            m_IsObjectEditPopupOpen = false;
+        }
+
+        if (ImGui::Button("Remove sprite"))
+        {
+            std::erase(spriteData, *m_HoveredSprite);
+            m_HoveredSprite = nullptr;
+
+            ImGui::CloseCurrentPopup();
+            m_IsObjectEditPopupOpen = false;
+        }
+        ImGui::EndDisabled();
+        
+        ImGui::SeparatorText("Door");
+
+        ImGui::BeginDisabled(doorData.size() == 4 || Parser::doors.size() == 255);
+        if (ImGui::Button("Add door"))
+        {
+            doorData.push_back(static_cast<uint8_t>(Parser::doors.size()));
+            Parser::doors.emplace_back(m_BackupCursorX, m_BackupCursorY, m_RoomId, 1, 1, 0, 0, 0, 0xFF);
+
+            ImGui::CloseCurrentPopup();
+            m_IsObjectEditPopupOpen = false;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(m_HoveredDoor == nullptr);
+        if (ImGui::Button("Edit door"))
+        {
+            Ui::ShowWindow<EditDoorWindow>()->Setup(m_HoveredDoor);
+
+            ImGui::CloseCurrentPopup();
+            m_IsObjectEditPopupOpen = false;
+        }
+
+        if (ImGui::Button("Remove door"))
+        {
+            std::erase(doorData, std::ranges::find(Parser::doors, *m_HoveredDoor) - Parser::doors.begin());
+            Parser::DeleteDoor(*m_HoveredDoor);
+
+            m_HoveredDoor = nullptr;
+
+            ImGui::CloseCurrentPopup();
+            m_IsObjectEditPopupOpen = false;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::EndPopup();
     }
+
+    if (!ImGui::IsPopupOpen("objectEditPopup"))
+        m_IsObjectEditPopupOpen = false;
 }
 
 void RoomEditor::LoadRoom()

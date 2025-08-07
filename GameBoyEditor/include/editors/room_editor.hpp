@@ -29,6 +29,7 @@ private:
 
     void DrawSprites(ImVec2 position, bool_t inBounds, size_t cursorX, size_t cursorY);
     void DrawDoors(ImVec2 position, bool_t inBounds, size_t cursorX, size_t cursorY);
+    void DrawObjectContextMenu(size_t cursorX, size_t cursorY);
 
     void LoadRoom();
     void ResizeRoom();
