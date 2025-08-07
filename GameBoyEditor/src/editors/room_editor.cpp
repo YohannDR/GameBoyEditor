@@ -160,7 +160,8 @@ void RoomEditor::DrawRoom()
 
     Ui::DrawTilemap(m_TilemapRenderTarget, graphics, tilemap, palette);
 
-    const ImVec2 selectSize = m_Selection.active ? ImVec2(1, 1) : ImVec2(static_cast<float_t>(std::abs(m_Selection.width) + 1), static_cast<float_t>(std::abs(m_Selection.height) + 1));
+    const ImVec2 selectSize = m_Selection.active || m_EditingMode == EditingMode::Object ? ImVec2(1, 1) :
+        ImVec2(static_cast<float_t>(std::abs(m_Selection.width) + 1), static_cast<float_t>(std::abs(m_Selection.height) + 1));
     const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)),
         m_TilemapRenderTarget.scale * 8, selectSize);
     const bool_t inBounds = index != std::numeric_limits<size_t>::max();
@@ -216,7 +217,7 @@ void RoomEditor::DrawRoom()
 
 void RoomEditor::UpdateSelection(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY, const bool_t onGraphics)
 {
-    if (inBounds && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    if (inBounds && m_EditingMode == EditingMode::Tile && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
         m_Selection.active = true;
         m_Selection.x = static_cast<uint8_t>(cursorX);
@@ -234,7 +235,7 @@ void RoomEditor::UpdateSelection(const ImVec2 position, const bool_t inBounds, c
     
     if (m_Selection.active)
     {
-        if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) || m_EditingMode == EditingMode::Object)
         {
             m_Selection.active = false;
 
