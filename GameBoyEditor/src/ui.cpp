@@ -222,7 +222,7 @@ void Ui::DrawTile(const RenderTarget& renderTarget, const std::vector<uint8_t>& 
     renderTarget.Draw();
 }
 
-void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
+size_t Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_t>& graphics, const Palette& palette, size_t* const selectedTile)
 {
     const size_t tileAmount = graphics.size() / 16;
 
@@ -249,15 +249,20 @@ void Ui::DrawGraphics(const RenderTarget& renderTarget, const std::vector<uint8_
     const float_t tileMax = static_cast<float_t>(tileAmount);
     const size_t index = DrawSelectSquare(position, ImVec2(tileMax >= 16 ? 16 : tileMax, 1 + tileMax / 16), pixelSize * 8);
 
-    const ImVec2 selectPos = ImVec2(
-        position.x + static_cast<float_t>(*selectedTile % 16) * pixelSize * 8,
-        position.y + static_cast<float_t>(*selectedTile / 16) * pixelSize * 8  // NOLINT(bugprone-integer-division)
-    );
+    if (selectedTile)
+    {
+        const ImVec2 selectPos = ImVec2(
+            position.x + static_cast<float_t>(*selectedTile % 16) * pixelSize * 8,
+            position.y + static_cast<float_t>(*selectedTile / 16) * pixelSize * 8  // NOLINT(bugprone-integer-division)
+        );
 
-    ImGui::GetWindowDrawList()->AddRect(selectPos, ImVec2(selectPos.x + pixelSize * 8, selectPos.y + pixelSize * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
+        ImGui::GetWindowDrawList()->AddRect(selectPos, ImVec2(selectPos.x + pixelSize * 8, selectPos.y + pixelSize * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
-        *selectedTile = index;
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && index != std::numeric_limits<size_t>::max() && index < tileAmount)
+            *selectedTile = index;
+    }
+
+    return index;
 }
 
 void Ui::DrawTilemap(const RenderTarget& renderTarget, const Graphics& graphics, const Tilemap& tilemap, const Palette& palette)
@@ -299,21 +304,21 @@ void Ui::DrawCross(const ImVec2 position, const float_t size)
     dl->AddLine(ImVec2(position.x + size * 8, position.y), ImVec2(position.x, position.y + size * 8), IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 }
 
-size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 size, const float_t squareSize)
+size_t Ui::DrawSelectSquare(const ImVec2 position, const ImVec2 areaSize, const float_t scale, const ImVec2 size)
 {
     const ImVec2 mousePos = ImGui::GetMousePos();
     const ImVec2 delta = ImVec2(mousePos.x - position.x, mousePos.y - position.y);
     size_t index = std::numeric_limits<size_t>::max();
 
-    if (delta.x >= 0 && delta.x < size.x * squareSize && delta.y >= 0 && delta.y < size.y * squareSize)
+    if (delta.x >= 0 && delta.x < areaSize.x * scale && delta.y >= 0 && delta.y < areaSize.y * scale)
     {
-        const size_t x = static_cast<size_t>(delta.x) / static_cast<size_t>(squareSize);
-        const size_t y = static_cast<size_t>(delta.y) / static_cast<size_t>(squareSize);
+        const size_t x = static_cast<size_t>(delta.x) / static_cast<size_t>(scale);
+        const size_t y = static_cast<size_t>(delta.y) / static_cast<size_t>(scale);
 
-        index = y * static_cast<size_t>(size.x) + x;
+        index = y * static_cast<size_t>(areaSize.x) + x;
 
-        const ImVec2 p1 = ImVec2(position.x + static_cast<float_t>(x) * squareSize, position.y + static_cast<float_t>(y) * squareSize);
-        const ImVec2 p2 = ImVec2(p1.x + squareSize, p1.y + squareSize);
+        const ImVec2 p1 = ImVec2(position.x + static_cast<float_t>(x) * scale, position.y + static_cast<float_t>(y) * scale);
+        const ImVec2 p2 = ImVec2(p1.x + size.x * scale, p1.y + size.y * scale);
 
         ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0xFF, 0x00, 0x00, 0xFF));
     }

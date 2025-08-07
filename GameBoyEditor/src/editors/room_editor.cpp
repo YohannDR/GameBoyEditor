@@ -130,7 +130,13 @@ void RoomEditor::DrawTileset()
         const Graphics& graphics = Parser::graphics[m_SelectedGraphics];
 
         ImGui::SliderFloat("Zoom", &m_GraphicsRenderTarget.scale, 4, 20);
-        Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, &m_SelectedTile);
+
+        const ImVec2 position = Ui::GetPosition();
+        const size_t index = Ui::DrawGraphics(m_GraphicsRenderTarget, graphics, Parser::rooms[m_RoomId].colorPalette, nullptr);
+
+        const bool_t inBounds = index != std::numeric_limits<size_t>::max() && index < graphics.size() / 16;
+
+        UpdateSelection(position, inBounds, index % 16, index / 16, true);
     }
 
     ImGui::EndChild();
@@ -154,19 +160,41 @@ void RoomEditor::DrawRoom()
 
     Ui::DrawTilemap(m_TilemapRenderTarget, graphics, tilemap, palette);
 
-    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)), m_TilemapRenderTarget.scale * 8);
+    const ImVec2 selectSize = m_Selection.active ? ImVec2(1, 1) : ImVec2(static_cast<float_t>(std::abs(m_Selection.width) + 1), static_cast<float_t>(std::abs(m_Selection.height) + 1));
+    const size_t index = Ui::DrawSelectSquare(position, ImVec2(static_cast<float_t>(width), static_cast<float_t>(height)),
+        m_TilemapRenderTarget.scale * 8, selectSize);
     const bool_t inBounds = index != std::numeric_limits<size_t>::max();
 
     const size_t x = index % width;
     const size_t y = index / width;
 
-    if (m_EditingMode == EditingMode::Tile && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds && ImGui::IsItemHovered())
-    {
+    if (m_EditingMode == EditingMode::Tile && !m_Selection.data.empty() && ImGui::IsMouseDown(ImGuiMouseButton_Left) && inBounds && ImGui::IsItemHovered())
+    {        
         if (!m_EditTilemapAction)
             m_EditTilemapAction = new EditTilemapAction(&tilemap);
 
-        m_EditTilemapAction->AddEdit(static_cast<uint8_t>(x), static_cast<uint8_t>(y), tilemap[y][x], static_cast<uint8_t>(m_SelectedTile));
-        tilemap[y][x] = static_cast<uint8_t>(m_SelectedTile);
+        const size_t selectionWidth = std::abs(m_Selection.width) + 1;
+        const size_t selectionHeight = std::abs(m_Selection.height) + 1;
+
+        for (size_t j = 0; j < selectionHeight; j++)
+        {
+            for (size_t i = 0; i < selectionWidth; i++)
+            {
+                const size_t localX = x + i;
+                if (localX >= width)
+                    continue;
+
+                const size_t localY = y + j;
+                if (localY >= height)
+                    continue;
+    
+                const uint8_t tile = m_Selection.data[j * selectionWidth + i];
+
+                m_EditTilemapAction->AddEdit(static_cast<uint8_t>(localX), static_cast<uint8_t>(localY),
+                    tilemap[localY][localX], tile);
+                tilemap[localY][localX] = tile;
+            }
+        }
     }
 
     if (m_EditingMode == EditingMode::Tile && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -181,8 +209,87 @@ void RoomEditor::DrawRoom()
     DrawSprites(position, inBounds, x, y);
     DrawDoors(position, inBounds, x, y);
     DrawObjectContextMenu(x, y);
+    UpdateSelection(position, inBounds, x, y, false);
 
     ImGui::EndChild();
+}
+
+void RoomEditor::UpdateSelection(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY, const bool_t onGraphics)
+{
+    if (inBounds && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        m_Selection.active = true;
+        m_Selection.x = static_cast<uint8_t>(cursorX);
+        m_Selection.y = static_cast<uint8_t>(cursorY);
+        m_Selection.lastX = m_Selection.x;
+        m_Selection.lastY = m_Selection.y;
+        m_Selection.width = 0;
+        m_Selection.height = 0;
+        m_Selection.onGraphics = onGraphics;
+        m_Selection.data.clear();
+    }
+
+    if (m_Selection.onGraphics != onGraphics)
+        return;
+    
+    if (m_Selection.active)
+    {
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+        {
+            m_Selection.active = false;
+
+            const size_t startX = m_Selection.width < 0 ? m_Selection.x + m_Selection.width : m_Selection.x;
+            const size_t startY = m_Selection.height < 0 ? m_Selection.y + m_Selection.height : m_Selection.y;
+
+            const size_t width = std::abs(m_Selection.width) + 1;
+            const size_t height = std::abs(m_Selection.height) + 1;
+
+            const Tilemap& tilemap = Parser::tilemaps[Parser::rooms[m_RoomId].tilemap];
+
+            for (size_t y = 0; y < height; y++)
+            {
+                for (size_t x = 0; x < width; x++)
+                {
+                    if (m_Selection.onGraphics)
+                    {
+                        m_Selection.data.push_back((startY + y) * 16 + startX + x);
+                    }
+                    else
+                    {
+                        m_Selection.data.push_back(tilemap[startY + y][startX + x]);
+                    }
+                }
+            }
+        }
+        else if (inBounds)
+        {
+            if (cursorX != m_Selection.lastX)
+            {
+                m_Selection.lastX = static_cast<uint8_t>(cursorX);
+                m_Selection.width = m_Selection.lastX - m_Selection.x; 
+            }
+
+            if (cursorY != m_Selection.lastY)
+            {
+                m_Selection.lastY = static_cast<uint8_t>(cursorY);
+                m_Selection.height = m_Selection.lastY - m_Selection.y; 
+            }
+        }
+    }
+
+    const float_t scale = m_Selection.onGraphics ? m_GraphicsRenderTarget.scale : m_TilemapRenderTarget.scale;
+
+    const ImVec2 p1 = ImVec2(
+        position.x + m_Selection.GetDrawX() * scale * 8,
+        position.y + m_Selection.GetDrawY() * scale * 8
+    );
+
+    const ImVec2 p2 = ImVec2(
+        p1.x + scale * 8 * m_Selection.GetDrawWidth(),
+        p1.y + scale * 8 * m_Selection.GetDrawHeight()
+    );
+
+    ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0xFF, 0x00, 0x00, 0xFF));
 }
 
 void RoomEditor::DrawSprites(const ImVec2 position, const bool_t inBounds, const size_t cursorX, const size_t cursorY)

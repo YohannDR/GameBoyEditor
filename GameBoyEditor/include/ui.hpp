@@ -16,12 +16,12 @@ public:
     static void OnProjectLoaded();
 
     static void DrawTile(const RenderTarget& renderTarget, const Graphics& graphics, size_t graphicsIndex, const Palette& palette, bool_t xFlip = false, bool_t yFlip = false);
-    static void DrawGraphics(const RenderTarget& renderTarget, const Graphics& graphics, const Palette& palette, size_t* selectedTile);
+    static size_t DrawGraphics(const RenderTarget& renderTarget, const Graphics& graphics, const Palette& palette, size_t* selectedTile);
     static void DrawTilemap(const RenderTarget& renderTarget, const Graphics& graphics, const Tilemap& tilemap, const Palette& palette);
 
     static void DrawPalette(Palette& palette, float_t size, size_t* selectedColor);
     static void DrawCross(ImVec2 position, float_t size);
-    static size_t DrawSelectSquare(ImVec2 position, ImVec2 size, float_t squareSize);
+    static size_t DrawSelectSquare(ImVec2 position, ImVec2 areaSize, float_t scale, ImVec2 size = ImVec2(1, 1));
 
     static void CreateSubWindow(const char_t* name, ImGuiChildFlags flags, ImVec2 size = ImVec2(0, 0), uint32_t bgColor = IM_COL32(50, 50, 50, 255));
 
