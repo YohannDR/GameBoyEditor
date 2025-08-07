@@ -5,6 +5,7 @@
 #include "application.hpp"
 #include "editors/add_resource.hpp"
 #include "editors/animation_editor.hpp"
+#include "editors/collision_table_editor.hpp"
 #include "editors/edit_door_window.hpp"
 #include "editors/edit_sprite_window.hpp"
 #include "editors/graphics_editor.hpp"
@@ -61,6 +62,9 @@ void Ui::MainMenuBar()
         if (ImGui::MenuItem("Tileset editor"))
             ShowWindow<TilesetEditor>();
 
+        if (ImGui::MenuItem("Collision table editor"))
+            ShowWindow<CollisionTableEditor>();
+
         ImGui::EndMenu();
     }
 
@@ -75,6 +79,9 @@ void Ui::MainMenuBar()
 
         if (ImGui::MenuItem("Room"))
             ShowWindow<AddResource>()->Setup(SymbolType::RoomData);
+
+        if (ImGui::MenuItem("Collision table"))
+            ShowWindow<AddResource>()->Setup(SymbolType::CollisionTable);
 
         ImGui::EndMenu();
     }
@@ -330,6 +337,7 @@ void Ui::SetupWindow()
     m_Windows.push_back(new AnimationEditor());
     m_Windows.push_back(new AddResource());
     m_Windows.push_back(new TilesetEditor());
+    m_Windows.push_back(new CollisionTableEditor());
 
     ShowWindow<RoomEditor>();
 }

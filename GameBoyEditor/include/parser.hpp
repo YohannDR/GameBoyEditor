@@ -13,6 +13,7 @@
 using Tilemap = std::vector<std::vector<uint8_t>>;
 using Graphics = std::vector<uint8_t>;
 using DoorData = std::vector<uint8_t>;
+using CollisionTable = std::vector<std::string>;
 
 enum class SymbolType : uint8_t
 {
@@ -23,7 +24,9 @@ enum class SymbolType : uint8_t
     Animation,
     RoomData,
     Doors,
-    Tilesets
+    Tilesets,
+    CollisionTable,
+    CollisionTableArray
 };
 
 using SymbolInfo = std::pair<SymbolType, std::string>;
@@ -49,6 +52,8 @@ public:
     static inline std::unordered_map<std::string, std::vector<SpriteData>> sprites;
     static inline std::unordered_map<std::string, DoorData> roomsDoorData;
     static inline std::unordered_map<std::string, Animation> animations;
+    static inline std::unordered_map<std::string, CollisionTable> collisionTables;
+    static inline std::vector<std::string> collisionTableArray;
 
     static inline std::unordered_map<std::string, std::vector<SymbolInfo>> fileAssociations;
     static inline std::vector<std::string> existingSymbols;
@@ -66,6 +71,8 @@ private:
     static bool_t ParseDoorData(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseDoors(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseTilesets(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseCollisionTable(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParseCollisionTableArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
 
     static void ParseEnums();
 
@@ -83,6 +90,8 @@ private:
     static void SaveRoomData(std::fstream& file, const std::string& symbolName);
     static void SaveDoors(std::fstream& file, const std::string& symbolName);
     static void SaveTilesets(std::fstream& file, const std::string& symbolName);
+    static void SaveCollisionTable(std::fstream& file, const std::string& symbolName);
+    static void SaveCollisionTableArray(std::fstream& file, const std::string& symbolName);
 
     static std::string ToHex(size_t value);
 };

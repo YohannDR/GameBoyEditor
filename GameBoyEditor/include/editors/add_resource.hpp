@@ -24,14 +24,18 @@ private:
 
     void NormalSymbolFields();
     void RoomFields();
+    void CollisionTableFields();
 
     void CreateResource() const;
     void CreateGraphics() const;
     void CreateAnimation() const;
-    void CreateRoom();
+    void CreateCollisionTable() const;
+    void CreateRoom() const;
 
     static void RegenerateRoomIncludeFile();
     static void CreateRoomHeaderFile();
+
+    static void RegenerateCollisionTableIncludeFile();
 
     SymbolType m_Type = SymbolType::Graphics;
 };

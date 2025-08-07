@@ -14,9 +14,9 @@ GraphicsEditor::GraphicsEditor()
     name = "Graphics editor";
 
     m_GraphicsRenderTarget.Create(16 * 8, 8);
-    m_TileRenderTarget.Create(8, 8);
-
     m_GraphicsRenderTarget.scale = 4;
+
+    m_TileRenderTarget.Create(8, 8);
     m_TileRenderTarget.scale = 25;
 }
 

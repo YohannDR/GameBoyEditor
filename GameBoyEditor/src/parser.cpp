@@ -76,6 +76,8 @@ bool_t Parser::Save()
                 case SymbolType::RoomData: SaveRoomData(file, symbolInfo.second); break;
                 case SymbolType::Doors: SaveDoors(file, symbolInfo.second); break;
                 case SymbolType::Tilesets: SaveTilesets(file, symbolInfo.second); break;
+                case SymbolType::CollisionTable: SaveCollisionTable(file, symbolInfo.second); break;
+                case SymbolType::CollisionTableArray: SaveCollisionTableArray(file, symbolInfo.second); break;
             }
         }
 
@@ -181,6 +183,14 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
         else if (line.starts_with("const u8* const sTilesets"))
         {
             ParseTilesets(file, filePath, line);
+        }
+        else if (line.starts_with("const u8 sCollisionTable_"))
+        {
+            ParseCollisionTable(file, filePath, line);
+        }
+        else if (line.starts_with("const u8* const sCollisionTables"))
+        {
+            ParseCollisionTableArray(file, filePath, line);
         }
     }
 
@@ -506,6 +516,43 @@ bool_t Parser::ParseTilesets(std::ifstream& file, const std::filesystem::path& f
     }
 
     RegisterSymbol(filePath.string(), "sTilesets", SymbolType::Tilesets);
+    return true;
+}
+
+bool_t Parser::ParseCollisionTable(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    const size_t idx = line.find('[');
+    const std::string symbolName = line.substr(sizeof("const u8"), idx - sizeof("const u8"));
+
+    while (true)
+    {
+        std::getline(file, line);
+
+        if (line[0] == '}')
+            break;
+
+        const std::string clipdata = line.substr(sizeof("    ") - 1, line.find(',') - sizeof("    ") + 1);
+        collisionTables[symbolName].push_back(clipdata);
+    }
+
+    RegisterSymbol(filePath.string(), symbolName, SymbolType::CollisionTable);
+    return true;
+}
+
+bool_t Parser::ParseCollisionTableArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
+{
+    while (true)
+    {
+        std::getline(file, line);
+
+        if (line[0] == '}')
+            break;
+
+        const std::string clipdata = line.substr(sizeof("    ") - 1, line.find(',') - sizeof("    ") + 1);
+        collisionTableArray.push_back(clipdata);
+    }
+
+    RegisterSymbol(filePath.string(), "sCollisionTables", SymbolType::CollisionTableArray);
     return true;
 }
 
@@ -879,10 +926,32 @@ void Parser::SaveDoors(std::fstream& file, const std::string& symbolName)
 
 void Parser::SaveTilesets(std::fstream& file, const std::string& symbolName)
 {
-    file << "const u8* const " << symbolName << "[] = {\n";
+    file << "\nconst u8* const " << symbolName << "[] = {\n";
 
     for (const std::string& tileset : tilesets)
         file << TAB << tileset << ",\n";
+
+    file << "};\n";
+}
+
+void Parser::SaveCollisionTable(std::fstream& file, const std::string& symbolName)
+{
+    const CollisionTable& collisionTable = collisionTables[symbolName];
+
+    file << "\nconst u8 " << symbolName << "[] = {\n";
+
+    for (const std::string& clipdata : collisionTable)
+        file << TAB << clipdata << ",\n";
+
+    file << "};\n";
+}
+
+void Parser::SaveCollisionTableArray(std::fstream& file, const std::string& symbolName)
+{
+    file << "\nconst u8* const " << symbolName << "[] = {\n";
+
+    for (const std::string& collisionTable : collisionTableArray)
+        file << TAB << collisionTable << ",\n";
 
     file << "};\n";
 }

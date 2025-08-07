@@ -24,6 +24,8 @@ void AddResource::Update()
 
     if (m_Type == SymbolType::RoomData)
         RoomFields();
+    else if (m_Type == SymbolType::CollisionTable)
+        CollisionTableFields();
     else
         NormalSymbolFields();
 }
@@ -66,7 +68,16 @@ void AddResource::RoomFields()
     ImGui::SameLine();
     ImGui::Text("%d", static_cast<int32_t>(Parser::rooms.size()));
 
-    ImGui::InputScalar("Collision table", ImGuiDataType_U8, &m_RoomCollisionTable);
+    if (ImGui::BeginCombo("Collision table", Parser::collisionTableArray[m_RoomCollisionTable].c_str()))
+    {
+        for (size_t i = 0; i < Parser::collisionTableArray.size(); i++)
+        {
+            if (ImGui::MenuItem(Parser::collisionTableArray[i].c_str()))
+                m_RoomCollisionTable = i;
+        }
+
+        ImGui::EndCombo();
+    }
     ImGui::InputScalar("Origin X", ImGuiDataType_U8, &m_RoomOriginX);
     ImGui::InputScalar("Origin Y", ImGuiDataType_U8, &m_RoomOriginY);
 
@@ -77,18 +88,36 @@ void AddResource::RoomFields()
     }
 }
 
+void AddResource::CollisionTableFields()
+{
+    ImGui::Text("sCollisionTable_");
+    ImGui::SameLine();
+    ImGui::InputText("Symbol name", &m_SymbolName);
+    ImGui::SetItemTooltip("The name of the resource, will be prefixed with \"sCollisionTable_\", you don't have to input it manually");
+
+    if (ImGui::Button("Add"))
+    {
+        m_SymbolName = "sCollisionTable_" + m_SymbolName;
+        CreateCollisionTable();
+        open = false;
+    }
+}
+
 void AddResource::CreateResource() const
 {
     switch (m_Type)
     {
         case SymbolType::Graphics: CreateGraphics(); break;
         case SymbolType::Animation: CreateAnimation(); break;
-        case SymbolType::RoomData:
-            break;
+        case SymbolType::CollisionTable: CreateCollisionTable(); break;
 
+        case SymbolType::RoomData:
         case SymbolType::Tilemap:
         case SymbolType::DoorData:
         case SymbolType::SpriteData:
+        case SymbolType::Doors:
+        case SymbolType::Tilesets:
+        case SymbolType::CollisionTableArray:
             return;
     }
 
@@ -109,7 +138,20 @@ void AddResource::CreateAnimation() const
     Parser::animations[m_SymbolName] = dummyAnimation;
 }
 
-void AddResource::CreateRoom()
+void AddResource::CreateCollisionTable() const
+{
+    const std::string sourceFile = Application::projectPath + R"(\src\data\collision_tables.c)";
+
+    Parser::collisionTables[m_SymbolName] = {};
+    Parser::collisionTables[m_SymbolName].emplace_back("CLIPDATA_AIR");
+
+    Parser::collisionTableArray.push_back(m_SymbolName);
+    Parser::RegisterSymbol(sourceFile, m_SymbolName, SymbolType::CollisionTable);
+
+    RegenerateCollisionTableIncludeFile();
+}
+
+void AddResource::CreateRoom() const
 {
     const std::string roomIndex = std::to_string(Parser::rooms.size());
     const std::string sourceFile = Application::projectPath + R"(\src\data\rooms\room)" + roomIndex + ".c";
@@ -148,7 +190,7 @@ void AddResource::RegenerateRoomIncludeFile()
     for (size_t i = 0; i < Parser::rooms.size(); i++)
         file << "#include \"data/rooms/room" << i << ".h\"\n";
 
-    file << "\n#endif /* ROOMS_H */";
+    file << "\n#endif /* ROOMS_H */\n";
 
     file.close();
 }
@@ -167,4 +209,23 @@ void AddResource::CreateRoomHeaderFile()
     file << "extern const u8 sRoom" << roomIndex << "_DoorData[];\n";
 
     file << "\n#endif /* ROOM_" << roomIndex << "_H */\n";
+}
+
+void AddResource::RegenerateCollisionTableIncludeFile()
+{
+    const std::string fileName = Application::projectPath + R"(\include\data\collision_tables.h)";
+
+    std::ofstream file;
+    file.open(fileName);
+
+    file << "#ifndef COLLISION_TABLES_H\n#define COLLISION_TABLES_H\n\n#include \"types.h\"\n\n";
+
+    for (const std::string& collisionTable : Parser::collisionTableArray)
+        file << "extern const u8 " << collisionTable << "[];\n";
+
+    file << "extern const u8* const sCollisionTables[];\n";
+
+    file << "\n#endif /* COLLISION_TABLES_H */\n";
+
+    file.close();
 }

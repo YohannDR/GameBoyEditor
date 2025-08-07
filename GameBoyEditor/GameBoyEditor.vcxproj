@@ -36,6 +36,7 @@
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\editors\add_resource.cpp" />
     <ClCompile Include="src\editors\animation_editor.cpp" />
+    <ClCompile Include="src\editors\collision_table_editor.cpp" />
     <ClCompile Include="src\editors\edit_door_window.cpp" />
     <ClCompile Include="src\editors\edit_sprite_window.cpp" />
     <ClCompile Include="src\editors\graphics_editor.cpp" />
@@ -86,6 +87,7 @@
     <ClInclude Include="include\door.hpp" />
     <ClInclude Include="include\editors\add_resource.hpp" />
     <ClInclude Include="include\editors\animation_editor.hpp" />
+    <ClInclude Include="include\editors\collision_table_editor.hpp" />
     <ClInclude Include="include\editors\edit_door_window.hpp" />
     <ClInclude Include="include\editors\edit_sprite_window.hpp" />
     <ClInclude Include="include\editors\graphics_editor.hpp" />
