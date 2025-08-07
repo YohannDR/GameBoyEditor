@@ -19,7 +19,7 @@ void main()
 
     const int tilemapIndex = pixelPosition.x / 8 + (pixelPosition.y / 8) * tilemapWidth;
 
-    const float tilemapOffset = float(tilemapIndex) / float(tilemapSize - 1);
+    const float tilemapOffset = float(tilemapIndex) / float(tilemapSize - 1) - 0.0000001;
     const int tileId = int(texture(tilemap, vec2(tilemapOffset, 0)).r * 255);
 
     const int subPixelX = 7 - pixelPosition.x % 8;
