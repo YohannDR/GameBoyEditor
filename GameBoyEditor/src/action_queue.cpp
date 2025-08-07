@@ -7,8 +7,10 @@ void ActionQueue::Push(Action* action, const bool_t perform)
         ShiftActions();
         m_QueueIndex--;
     }
-
-    RerouteQueue();
+    else
+    {
+        RerouteQueue();
+    }
 
     m_Queue[m_QueueIndex] = action;
 
