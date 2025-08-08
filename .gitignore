@@ -515,4 +515,4 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,rider,visualstudio
 
-!Test/libs/*.lib
+!GameBoyEditor/externals/libs/*.lib
