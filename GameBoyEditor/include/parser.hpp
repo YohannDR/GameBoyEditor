@@ -8,6 +8,7 @@
 #include "animation.hpp"
 #include "core.hpp"
 #include "door.hpp"
+#include "physics.hpp"
 #include "room.hpp"
 
 using Tilemap = std::vector<std::vector<uint8_t>>;
@@ -54,6 +55,7 @@ public:
     static inline std::unordered_map<std::string, Animation> animations;
     static inline std::unordered_map<std::string, CollisionTable> collisionTables;
     static inline std::vector<std::string> collisionTableArray;
+    static inline Physics physics;
 
     static inline std::unordered_map<std::string, std::vector<SymbolInfo>> fileAssociations;
     static inline std::vector<std::string> existingSymbols;
@@ -73,6 +75,7 @@ private:
     static bool_t ParseTilesets(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseCollisionTable(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
     static bool_t ParseCollisionTableArray(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
+    static bool_t ParsePhysics(std::ifstream& file, const std::filesystem::path& filePath, std::string& line);
 
     static void ParseEnums();
 
@@ -92,6 +95,7 @@ private:
     static void SaveTilesets(std::fstream& file, const std::string& symbolName);
     static void SaveCollisionTable(std::fstream& file, const std::string& symbolName);
     static void SaveCollisionTableArray(std::fstream& file, const std::string& symbolName);
+    static void SavePhysics();
 
     static std::string ToHex(size_t value);
 };
