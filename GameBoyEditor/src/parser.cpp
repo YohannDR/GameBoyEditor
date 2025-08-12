@@ -312,7 +312,7 @@ bool_t Parser::ParseRoomInfo(std::ifstream& file, const std::filesystem::path& f
         (void)sscanf_s(line.c_str(), "        .originX = SCREEN_SIZE_X_SUB_PIXEL * %d,", &originX);
         std::getline(file, line);
         int32_t originY;
-        (void)sscanf_s(line.c_str(), "        .originY = SCREEN_SIZE_X_SUB_PIXEL * %d,", &originY);
+        (void)sscanf_s(line.c_str(), "        .originY = SCREEN_SIZE_Y_SUB_PIXEL * %d,", &originY);
 
         // Skip the line with },
         std::getline(file, line);
@@ -922,7 +922,7 @@ void Parser::SaveRoomData(std::fstream& file, const std::string& symbolName)
         file << TAB TAB ".doorData = " << rooms[i].doorData << ",\n";
         file << TAB TAB ".collisionTable = " << static_cast<size_t>(rooms[i].collisionTable) << ",\n";
         file << TAB TAB ".originX = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originX) << ",\n";
-        file << TAB TAB ".originY = SCREEN_SIZE_X_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originY) << ",\n";
+        file << TAB TAB ".originY = SCREEN_SIZE_Y_SUB_PIXEL * " << static_cast<size_t>(rooms[i].originY) << ",\n";
         file << TAB "},\n";
     }
 
