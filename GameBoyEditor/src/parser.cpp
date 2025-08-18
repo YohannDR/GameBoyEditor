@@ -253,15 +253,13 @@ bool_t Parser::ParseGraphicsArray(std::ifstream& file, const std::filesystem::pa
         }
         else if (type == SymbolType::Tilemap)
         {
-            std::istringstream stream(line);
+            int32_t amount;
+            int32_t value;
 
-            for (size_t i = 0; i < width; i++)
-            {
-                int32_t v;
-                char_t c;
-                stream >> std::hex >> v >> c;
-                data.push_back(v);
-            }
+            (void)sscanf_s(line.c_str(), "%x, %x", &amount, &value);
+
+            while (amount--)
+                data.push_back(value);
         }
     }
 
@@ -828,18 +826,25 @@ void Parser::SaveTilemap(std::fstream& file, const std::string& symbolName)
 
     file << TAB << tilemap[0].size() << ", " << tilemap.size() << ",\n\n";
 
+    uint8_t count = 0;
+    uint8_t value = tilemap[0][0];
     for (const std::vector<uint8_t>& row : tilemap)
     {
-        file << TAB;
-        for (size_t j = 0; j < row.size(); j++)
+        for (const uint8_t v : row)
         {
-            file << ToHex(row[j]) << ',';
-            if (j == row.size() - 1)
-                file << '\n';
+            if (v == value)
+            {
+                count++;
+                continue;
+            }
+
+            file << TAB << ToHex(count) << ", " << ToHex(value) << ",\n";
+            count = 1;
+            value = v;
         }
     }
 
-    file << "};\n";
+    file << TAB << ToHex(count) << ", " << ToHex(value) << ",\n" TAB "0x00, 0x00,\n};\n";
 }
 
 void Parser::SaveSpriteData(std::fstream& file, const std::string& symbolName)
