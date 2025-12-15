@@ -90,15 +90,15 @@ void RoomEditor::DrawEditingMode()
 
 void RoomEditor::DrawResize()
 {
-    constexpr uint8_t maxWidth = 20 * 4;
-    constexpr uint8_t maxHeight = 18 * 4;
+    constexpr uint8_t maxWidth = 32;
+    constexpr uint8_t maxHeight = 32;
 
     constexpr float_t size = 50;
     ImGui::SetNextItemWidth(size / 2);
-    ImGui::DragScalar("Width", ImGuiDataType_U8, &m_Width, 1, nullptr, &maxWidth);
+    ImGui::DragScalar("Width", ImGuiDataType_U8, &m_Width, 1, nullptr, &maxWidth, nullptr, ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput);
     ImGui::SameLine();
     ImGui::SetNextItemWidth(size / 2);
-    ImGui::DragScalar("Height", ImGuiDataType_U8, &m_Height, 1, nullptr, &maxHeight);
+    ImGui::DragScalar("Height", ImGuiDataType_U8, &m_Height, 1, nullptr, &maxHeight, nullptr, ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ClampOnInput);
 
     if (ImGui::Button("Resize"))
         ResizeRoom();

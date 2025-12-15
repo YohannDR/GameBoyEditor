@@ -19,8 +19,6 @@ private:
     std::string m_FullFilePath;
 
     uint8_t m_RoomCollisionTable = 0;
-    uint8_t m_RoomOriginX = 0;
-    uint8_t m_RoomOriginY = 0;
 
     void NormalSymbolFields();
     void RoomFields();

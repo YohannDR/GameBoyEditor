@@ -11,8 +11,6 @@ struct Room
     std::string spriteData;
     std::string doorData;
     uint8_t collisionTable;
-    uint16_t originX;
-    uint16_t originY;
 };
 
 struct SpriteData

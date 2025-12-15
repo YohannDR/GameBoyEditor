@@ -14,8 +14,6 @@ void AddResource::Setup(const SymbolType type)
     m_SymbolName = "";
 
     m_RoomCollisionTable = 0;
-    m_RoomOriginX = 0;
-    m_RoomOriginY = 0;
 }
 
 void AddResource::Update()
@@ -78,8 +76,6 @@ void AddResource::RoomFields()
 
         ImGui::EndCombo();
     }
-    ImGui::InputScalar("Origin X", ImGuiDataType_U8, &m_RoomOriginX);
-    ImGui::InputScalar("Origin Y", ImGuiDataType_U8, &m_RoomOriginY);
 
     if (ImGui::Button("Add"))
     {
@@ -173,7 +169,7 @@ void AddResource::CreateRoom() const
     Parser::RegisterSymbol(sourceFile, doorDataName, SymbolType::DoorData);
 
     constexpr Palette dummyPalette = { White, LightGrey, DarkGrey, Black };
-    Parser::rooms.emplace_back(tilemapName, dummyPalette, spriteDataName, doorDataName, m_RoomCollisionTable, m_RoomOriginX, m_RoomOriginY);
+    Parser::rooms.emplace_back(tilemapName, dummyPalette, spriteDataName, doorDataName, m_RoomCollisionTable);
 
     RegenerateRoomIncludeFile();
 }
