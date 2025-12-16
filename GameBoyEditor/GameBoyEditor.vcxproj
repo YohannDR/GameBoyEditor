@@ -40,7 +40,6 @@
     <ClCompile Include="src\editors\edit_door_window.cpp" />
     <ClCompile Include="src\editors\edit_sprite_window.cpp" />
     <ClCompile Include="src\editors\graphics_editor.cpp" />
-    <ClCompile Include="src\editors\physics_editor.cpp" />
     <ClCompile Include="src\editors\room_editor.cpp" />
     <ClCompile Include="src\editors\tileset_editor.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -92,11 +91,9 @@
     <ClInclude Include="include\editors\edit_door_window.hpp" />
     <ClInclude Include="include\editors\edit_sprite_window.hpp" />
     <ClInclude Include="include\editors\graphics_editor.hpp" />
-    <ClInclude Include="include\editors\physics_editor.hpp" />
     <ClInclude Include="include\editors\room_editor.hpp" />
     <ClInclude Include="include\editors\tileset_editor.hpp" />
     <ClInclude Include="include\parser.hpp" />
-    <ClInclude Include="include\physics.hpp" />
     <ClInclude Include="include\render_target.hpp" />
     <ClInclude Include="include\room.hpp" />
     <ClInclude Include="include\shader.hpp" />

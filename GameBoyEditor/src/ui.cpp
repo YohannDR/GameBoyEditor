@@ -9,7 +9,6 @@
 #include "editors/edit_door_window.hpp"
 #include "editors/edit_sprite_window.hpp"
 #include "editors/graphics_editor.hpp"
-#include "editors/physics_editor.hpp"
 #include "editors/room_editor.hpp"
 #include "editors/tileset_editor.hpp"
 #include "imgui/imgui.h"
@@ -67,9 +66,6 @@ void Ui::MainMenuBar()
 
         if (ImGui::MenuItem("Collision table editor"))
             ShowWindow<CollisionTableEditor>();
-
-        if (ImGui::MenuItem("Physics editor"))
-            ShowWindow<PhysicsEditor>();
 
         ImGui::EndMenu();
     }
@@ -349,7 +345,6 @@ void Ui::SetupWindow()
     m_Windows.push_back(new AddResource());
     m_Windows.push_back(new TilesetEditor());
     m_Windows.push_back(new CollisionTableEditor());
-    m_Windows.push_back(new PhysicsEditor());
 
     ShowWindow<RoomEditor>();
 }

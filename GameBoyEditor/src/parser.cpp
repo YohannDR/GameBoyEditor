@@ -86,8 +86,6 @@ bool_t Parser::Save()
         file.close();
     }
 
-    SavePhysics();
-
     return true;
 }
 
@@ -193,10 +191,6 @@ bool_t Parser::ParseFileContents(const std::filesystem::path& filePath)
         else if (line.starts_with("const u8* const sCollisionTables"))
         {
             ParseCollisionTableArray(file, filePath, line);
-        }
-        else if (line.starts_with("static void PlayerInitPhysics"))
-        {
-            ParsePhysics(file, filePath, line);
         }
     }
 
@@ -551,27 +545,6 @@ bool_t Parser::ParseCollisionTableArray(std::ifstream& file, const std::filesyst
     }
 
     RegisterSymbol(filePath.string(), "sCollisionTables", SymbolType::CollisionTableArray);
-    return true;
-}
-
-bool_t Parser::ParsePhysics(std::ifstream& file, const std::filesystem::path& filePath, std::string& line)
-{
-    // {
-    std::getline(file, line);
-
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.xAcceleration = %hhu", &physics.xAcceleration);
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.xVelocityCap = %hhu", &physics.xVelocityCap);
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.yVelocityCap = %hhd", &physics.yVelocityCap);
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.gravityUpwards = %hhu", &physics.gravityUpwards);
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.gravityDownwards = %hhu", &physics.gravityDownwards);
-    std::getline(file, line);
-    (void)sscanf_s(line.c_str(), "    gPlayerPhysics.jumpingVelocity = %hhd", &physics.jumpingVelocity);
-
     return true;
 }
 
@@ -978,55 +951,6 @@ void Parser::SaveCollisionTableArray(std::fstream& file, const std::string& symb
         file << TAB << collisionTable << ",\n";
 
     file << "};\n";
-}
-
-void Parser::SavePhysics()
-{
-    const std::string fileName = Application::projectPath + R"(\src\player.c)";
-    std::fstream file;
-    std::string line;
-    std::vector<std::string> lines;
-
-    file.open(fileName);
-
-    while (file)
-    {
-        std::getline(file, line);
-
-        if (line.starts_with("static void PlayerInitPhysics"))
-        {
-            lines.push_back(line);
-            std::getline(file, line);
-            lines.push_back(line);
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.xAcceleration = " + std::to_string(physics.xAcceleration) + ';');
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.xVelocityCap = " + std::to_string(physics.xVelocityCap) + ';');
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.yVelocityCap = " + std::to_string(physics.yVelocityCap) + ';');
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.gravityUpwards = " + std::to_string(physics.gravityUpwards) + ';');
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.gravityDownwards = " + std::to_string(physics.gravityDownwards) + ';');
-            std::getline(file, line);
-            lines.push_back("    gPlayerPhysics.jumpingVelocity = " + std::to_string(physics.jumpingVelocity) + ';');
-        }
-        else
-        {
-            lines.push_back(line);
-        }
-    }
-
-    std::fstream tempFile;
-    tempFile.open("temp.txt", std::fstream::out | std::fstream::ate);
-    for (size_t i = 0; i < lines.size() - 1; i++)
-        tempFile << lines[i] << '\n';
-
-    tempFile.close();
-    file.close();
-
-    (void)remove(fileName.c_str());
-    (void)rename("temp.txt", fileName.c_str());
 }
 
 std::string Parser::ToHex(const size_t value)
